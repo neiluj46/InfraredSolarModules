@@ -9,3 +9,8 @@ output/*
 !**/.gitkeep
 __pycache__/
 *.pyc
+# Environnement, jeux dérivés, entraînements
+.venv/
+data/classif/
+runs/
+models/
