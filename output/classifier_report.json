@@ -1,0 +1,186 @@
+{
+  "poids": "models/classifier.pt",
+  "n_test": 2002,
+  "exactitude": 0.8257,
+  "f1_macro": 0.752,
+  "exactitude_12_classes": 0.8057,
+  "f1_macro_12_classes": 0.6763,
+  "anomalie_vs_sain": {
+    "anomalies_ratees": 69,
+    "taux_anomalies_ratees": 0.0689,
+    "fausses_alertes": 100,
+    "taux_fausses_alertes": 0.1
+  },
+  "par_classe": {
+    "bypass_diode": {
+      "n": 168,
+      "precision": 0.969,
+      "recall": 0.935,
+      "f1-score": 0.952
+    },
+    "cracking": {
+      "n": 94,
+      "precision": 0.678,
+      "recall": 0.649,
+      "f1-score": 0.663
+    },
+    "hotspot": {
+      "n": 367,
+      "precision": 0.713,
+      "recall": 0.771,
+      "f1-score": 0.741
+    },
+    "no_anomaly": {
+      "n": 1000,
+      "precision": 0.929,
+      "recall": 0.9,
+      "f1-score": 0.914
+    },
+    "obstruction": {
+      "n": 290,
+      "precision": 0.708,
+      "recall": 0.703,
+      "f1-score": 0.706
+    },
+    "offline_module": {
+      "n": 83,
+      "precision": 0.5,
+      "recall": 0.578,
+      "f1-score": 0.536
+    }
+  },
+  "par_classe_origine": {
+    "Cell": {
+      "n": 188,
+      "precision": 0.663,
+      "recall": 0.713,
+      "f1-score": 0.687
+    },
+    "Cell-Multi": {
+      "n": 129,
+      "precision": 0.622,
+      "recall": 0.473,
+      "f1-score": 0.537
+    },
+    "Cracking": {
+      "n": 94,
+      "precision": 0.673,
+      "recall": 0.702,
+      "f1-score": 0.688
+    },
+    "Diode": {
+      "n": 150,
+      "precision": 0.973,
+      "recall": 0.953,
+      "f1-score": 0.963
+    },
+    "Diode-Multi": {
+      "n": 18,
+      "precision": 0.933,
+      "recall": 0.778,
+      "f1-score": 0.848
+    },
+    "Hot-Spot": {
+      "n": 25,
+      "precision": 0.462,
+      "recall": 0.72,
+      "f1-score": 0.562
+    },
+    "Hot-Spot-Multi": {
+      "n": 25,
+      "precision": 0.467,
+      "recall": 0.56,
+      "f1-score": 0.509
+    },
+    "No-Anomaly": {
+      "n": 1000,
+      "precision": 0.924,
+      "recall": 0.917,
+      "f1-score": 0.921
+    },
+    "Offline-Module": {
+      "n": 83,
+      "precision": 0.5,
+      "recall": 0.59,
+      "f1-score": 0.541
+    },
+    "Shadowing": {
+      "n": 106,
+      "precision": 0.685,
+      "recall": 0.594,
+      "f1-score": 0.636
+    },
+    "Soiling": {
+      "n": 20,
+      "precision": 0.615,
+      "recall": 0.4,
+      "f1-score": 0.485
+    },
+    "Vegetation": {
+      "n": 164,
+      "precision": 0.708,
+      "recall": 0.768,
+      "f1-score": 0.737
+    }
+  },
+  "matrice_confusion": {
+    "classes": [
+      "bypass_diode",
+      "cracking",
+      "hotspot",
+      "no_anomaly",
+      "obstruction",
+      "offline_module"
+    ],
+    "lignes_vrai_colonnes_predit": [
+      [
+        157,
+        0,
+        4,
+        2,
+        1,
+        4
+      ],
+      [
+        0,
+        61,
+        25,
+        1,
+        7,
+        0
+      ],
+      [
+        1,
+        21,
+        283,
+        16,
+        44,
+        2
+      ],
+      [
+        2,
+        0,
+        30,
+        900,
+        30,
+        38
+      ],
+      [
+        1,
+        7,
+        47,
+        27,
+        204,
+        4
+      ],
+      [
+        1,
+        1,
+        8,
+        23,
+        2,
+        48
+      ]
+    ]
+  }
+}
