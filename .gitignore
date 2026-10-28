@@ -1,0 +1,11 @@
+# DJI Thermal SDK : bibliothèques propriétaires (licence DJI), installées par scripts/install_dji_sdk.sh
+dji_sdk/lib/
+dji_sdk/bin/
+dji_sdk/samples/
+# Données et résultats
+data/raw_rjpegs/*
+data/processed/*
+output/*
+!**/.gitkeep
+__pycache__/
+*.pyc
