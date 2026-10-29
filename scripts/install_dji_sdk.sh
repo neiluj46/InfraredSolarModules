@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
 # Installe le DJI Thermal SDK v1.7 (20241205, Linux x64) dans dji_sdk/ et compile dji_irp.
 #
-# Les bibliothèques viennent du miroir GitHub SanNianYiSi/thermal_parser (commit figé,
-# empreintes SHA-256 vérifiées) : le site de DJI (dji.com, djicdn.com) n'est pas toujours
-# joignable. Les bibliothèques restent la propriété de DJI (licence du TSDK) : elles ne
-# sont pas versionnées dans ce dépôt (voir .gitignore).
+# Source par défaut : le zip OFFICIEL téléchargé à la main sur
+#   https://www.dji.com/downloads/softwares/dji-thermal-sdk
+#   ./scripts/install_dji_sdk.sh ~/Téléchargements/dji_thermal_sdk_v1.7_20241205.zip
+# Les bibliothèques sont comparées aux empreintes SHA-256 connues (celles du miroir) : un écart est
+# signalé sans bloquer, puisque le zip officiel fait foi.
+#
+# Secours : ./scripts/install_dji_sdk.sh --miroir  (miroir GitHub non officiel SanNianYiSi/thermal_parser,
+# commit figé, empreintes vérifiées et bloquantes).
+#
+# Les bibliothèques restent la propriété de DJI (licence du TSDK) : elles ne sont pas versionnées dans ce
+# dépôt (voir .gitignore).
 #
 # Résultat :
 #   dji_sdk/lib/       libdirp.so et ses greffons (libv_*.so, libMicro*.so, libexif.so.12)
 #   dji_sdk/bin/dji_irp
-#   dji_sdk/samples/   R-JPEG d'exemple (M2EA, M3T, M30T, M4T, H20T...)
+#   dji_sdk/samples/   R-JPEG d'exemple (ceux du zip officiel, ou M2EA, M3T, M30T, M4T, H20T... du miroir)
 set -euo pipefail
 
 RACINE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -24,18 +31,7 @@ if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
     exit 1
 fi
 
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-
-echo "Téléchargement de $VERSION (thermal_parser@${COMMIT:0:7})..."
-git -c advice.detachedHead=false clone -q --filter=blob:none --no-checkout "$DEPOT" "$TMP/tp"
-git -C "$TMP/tp" sparse-checkout set --no-cone \
-    "/plugins/$VERSION/linux/release_x64/" \
-    $(for m in $MODELES; do echo "/images/$m/"; done)
-git -C "$TMP/tp" checkout -q "$COMMIT"
-
-SRC="$TMP/tp/plugins/$VERSION/linux/release_x64"
-(cd "$SRC" && sha256sum -c --quiet - <<'EOF'
+EMPREINTES="$(cat <<'EOF'
 aec6c8697909216aa8f7a30cc2534af89a2792d1017cb4db28d4db8ab4281d89  libMicroIA_Release_x64.so
 928df2e97d6b19ea63638aa2a88fbd1de6b1d2413959cab216b1154ae977948d  libMicroJPEG_Release_x64.so
 91ad6a25132aa6dab191689b56c8d1ae9f0c8d0f23e072ae5d6a085dd41f2015  libMicroTA_Release_x64.so
@@ -47,16 +43,62 @@ ad48ee4e2d5ed7b8ced4e94defd41e2937d9bb341d23ec5679208f20d02c41ef  libexif.so.12
 cc5b430271e7b18f2b416c6ccdb34b84e713181954cb6ad9351fce85ee4adddc  libv_iirp.so
 7f87352274fcee0063c3cd577cf852b63cc643954d2910f6754cc1c57dff83b7  libv_list.ini
 EOF
-)
-echo "Empreintes SHA-256 vérifiées."
+)"
 
-rm -rf "$SDK/lib" "$SDK/bin" "$SDK/samples"
-mkdir -p "$SDK/lib" "$SDK/bin" "$SDK/samples"
-cp "$SRC"/* "$SDK/lib/"
-for m in $MODELES; do
-    [[ -d "$TMP/tp/images/$m" ]] && cp -r "$TMP/tp/images/$m" "$SDK/samples/"
-done
-echo "$VERSION (linux/release_x64) depuis $DEPOT@$COMMIT" > "$SDK/lib/VERSION.txt"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+rm_install() { rm -rf "$SDK/lib" "$SDK/bin" "$SDK/samples"; mkdir -p "$SDK/lib" "$SDK/bin" "$SDK/samples"; }
+
+if [[ "${1:-}" == "--miroir" ]]; then
+    echo "Téléchargement de $VERSION (thermal_parser@${COMMIT:0:7})..."
+    git -c advice.detachedHead=false clone -q --filter=blob:none --no-checkout "$DEPOT" "$TMP/tp"
+    git -C "$TMP/tp" sparse-checkout set --no-cone \
+        "/plugins/$VERSION/linux/release_x64/" \
+        $(for m in $MODELES; do echo "/images/$m/"; done)
+    git -C "$TMP/tp" checkout -q "$COMMIT"
+
+    SRC="$TMP/tp/plugins/$VERSION/linux/release_x64"
+    (cd "$SRC" && sha256sum -c --quiet - <<<"$EMPREINTES")
+    echo "Empreintes SHA-256 vérifiées."
+    rm_install
+    cp "$SRC"/* "$SDK/lib/"
+    for m in $MODELES; do
+        [[ -d "$TMP/tp/images/$m" ]] && cp -r "$TMP/tp/images/$m" "$SDK/samples/"
+    done
+    echo "$VERSION (linux/release_x64) depuis $DEPOT@$COMMIT (miroir non officiel)" > "$SDK/lib/VERSION.txt"
+elif [[ -f "${1:-}" ]]; then
+    ZIP="$(readlink -f "$1")"
+    echo "Décompression du zip officiel $ZIP..."
+    unzip -q "$ZIP" -d "$TMP/zip"
+    # Le zip peut contenir un second zip (paquet DJI emballé) : on le décompresse aussi.
+    find "$TMP/zip" -name '*.zip' -print0 | while IFS= read -r -d '' z; do unzip -q -o "$z" -d "${z%.zip}"; done
+    LIB="$(find "$TMP/zip" -path '*linux/release_x64/libdirp.so' -print -quit)"
+    if [[ -z "$LIB" ]]; then
+        echo "libdirp.so (linux/release_x64) introuvable dans $ZIP" >&2; exit 1
+    fi
+    SRC="$(dirname "$LIB")"
+    if (cd "$SRC" && sha256sum -c --quiet - <<<"$EMPREINTES" >/dev/null 2>&1); then
+        echo "Bibliothèques identiques à celles du miroir (empreintes SHA-256)."
+    else
+        echo "Attention : bibliothèques différentes des empreintes connues (zip officiel conservé, il fait foi)." >&2
+        (cd "$SRC" && sha256sum -c - <<<"$EMPREINTES" 2>&1 | grep -v ': OK$' >&2) || true
+    fi
+    rm_install
+    cp "$SRC"/* "$SDK/lib/"
+    # En-tête officiel gardé pour comparaison avec dirp_api_min.h (non versionné, licence DJI).
+    H="$(find "$TMP/zip" -name 'dirp_api.h' -print -quit)"
+    [[ -n "$H" ]] && cp "$H" "$SDK/lib/"
+    # Photos d'exemple du zip (dossier dataset/ des paquets DJI).
+    find "$TMP/zip" -iname '*.jpg' -path '*dataset*' -print0 | while IFS= read -r -d '' j; do
+        d="$SDK/samples/$(basename "$(dirname "$j")")"; mkdir -p "$d"; cp "$j" "$d/"
+    done
+    echo "$(basename "$ZIP") (linux/release_x64), zip officiel DJI" > "$SDK/lib/VERSION.txt"
+else
+    echo "Usage : $0 chemin/vers/dji_thermal_sdk_v1.7_20241205.zip   (zip officiel DJI)" >&2
+    echo "        $0 --miroir                                        (miroir GitHub non officiel)" >&2
+    exit 2
+fi
 
 echo "Compilation de dji_irp..."
 gcc -O2 -Wall -o "$SDK/bin/dji_irp.bin" "$SDK/src/dji_irp.c" \
@@ -72,4 +114,5 @@ EOF
 chmod +x "$SDK/bin/dji_irp"
 
 echo "Installé : $SDK/bin/dji_irp"
-"$SDK/bin/dji_irp" -s "$SDK/samples/M3T/DJI_0001_R.JPG" -a info
+EX="$(find "$SDK/samples" -iname '*.jpg' -print -quit)"
+[[ -n "$EX" ]] && "$SDK/bin/dji_irp" -s "$EX" -a info

@@ -11,7 +11,8 @@ Branche : `ccr-f0a48b31-r292tn`. Travail fait en session cloud les 28-29/10/2026
 git clone https://github.com/neiluj46/InfraredSolarModules.git
 cd InfraredSolarModules
 git checkout ccr-f0a48b31-r292tn
-./scripts/install_dji_sdk.sh                 # SDK DJI v1.7 + compilation de dji_irp (Linux x64, gcc)
+./scripts/install_dji_sdk.sh ~/Téléchargements/dji_thermal_sdk_v1.9_20260526.zip   # zip OFFICIEL DJI (dji.com) + compilation de dji_irp
+# secours : ./scripts/install_dji_sdk.sh --miroir  (miroir GitHub non officiel)
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
