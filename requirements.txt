@@ -1,0 +1,7 @@
+# Versions essayées le 28/10/2026 (Python 3.13)
+torch>=2.6          # 2.14.1 ; CPU suffit (pip install torch --index-url https://download.pytorch.org/whl/cpu pour une version légère)
+ultralytics>=8.3    # 8.4.191 ; détecteur YOLO (étape 3)
+scikit-learn>=1.5
+numpy>=1.26
+Pillow>=10
+exifread>=3.0       # métadonnées EXIF (étape 2)
