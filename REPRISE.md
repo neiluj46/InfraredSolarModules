@@ -105,6 +105,7 @@ Volumes des jeux Zenodo non vérifiés (Zenodo inaccessible depuis le cloud).
   (M4T, H30T, M5T), 1000 m (M3TD) ; une distance hors plage est refusée (−3), pas bornée.
 - Effet mesuré (M3T, DJI_0001) : émissivité 0,95 → 0,85 et distance 5 → 25 m : max 50,6 → 58,5 °C,
   moyenne 32,3 → 34,6 °C.
+- Avec la v1.9, le M2EA (et H20T, XTS) **accepte** le réglage de l'émissivité : plus de −12 attendu.
 
 ## À faire
 
@@ -113,7 +114,7 @@ Volumes des jeux Zenodo non vérifiés (Zenodo inaccessible depuis le cloud).
    (lat, lon, altitudes absolue et relative, nacelle yaw / pitch / roll, cap du drone) →
    `data/processed/metadata_db.json`. Tester sur **tes propres photos** (les exemples n'ont plus de GPS).
    Questions ouvertes : émissivité par défaut des panneaux (0,85 verre ?) ou celle de la photo ;
-   M2EA = paramètres de l'image.
+   distance = altitude relative bornée à la plage du modèle (25 m sur M3T / M30T / M2EA) ?
 3. Détecteur de modules (Ultralytics YOLO, jeu Zenodo 16420123), puis `scripts/train_thermal.py`.
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
