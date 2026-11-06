@@ -1,64 +1,60 @@
-# Prompt de reprise — pipeline thermique PV (à coller dans Claude Code, en local)
+# Prompt de reprise — thermographie PV + OrthoStudio (à coller dans Claude Code après /clear)
+
+Version courte à coller :
 
 ```
-Rôle : agent développeur sur mon dépôt InfraredSolarModules (branche ccr-f0a48b31-r292tn),
-en local sur mon PC Linux. Tout en français : code, messages, commits.
+Lis ~/InfraredSolarModules/PROMPT_REPRISE.md (bloc « Prompt complet ») et suis-le.
+```
 
-Objectif global : R-JPEG thermiques DJI (Mavic 2 EA, Mavic 3T, Matrice 30T / 4T) → matrice
-de températures par pixel → anomalies PV détectées par IA → output/orthostudio_report.geojson
-(polygones + T_max, T_mean, ΔT) importable dans OrthoStudio (mon logiciel, dépôt neiluj46/orthostudio).
+## Prompt complet
 
-Commence par lire REPRISE.md (état détaillé, résultats, bases de données, suite), puis
-git log -8 et scripts/. Ne refais pas ce qui est fait.
+```
+Rôle : agent développeur sur deux dépôts à moi, en local sur mon PC Linux (AEX). Tout en français :
+échanges, code, commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles sur mobile.
 
-Déjà fait :
-- Étape 1 : scripts/install_dji_sdk.sh installe le zip OFFICIEL DJI TSDK v1.9 (20260526) dans
-  dji_sdk/ et compile dji_sdk/src/dji_irp.c (mon outil : -a measure float32|int16, extract, info,
-  --distance --humidity --emissivity --reflection). Validé le 29/10 : measure OK sur les 10 modèles
-  d'exemple. Binaires DJI jamais versionnés (licence DJI).
-- Classifieur de l'état des modules (scripts/train_classifier.py, models/classifier.pt versionné) :
-  petit CNN PyTorch 40 × 24, standardisation par vignette, entraîné sur InfraredSolarModules
-  (12 classes → no_anomaly, hotspot, bypass_diode, offline_module, obstruction, cracking).
-  Test : 82,6 % (6 classes), bypass_diode 93,5 % de rappel, offline_module faible (57,8 %).
-- Décisions : architecture en DEUX étages (détecteur de modules, puis classifieur par module) ;
-  module hors service et string_failure par RÈGLE sur les températures (module plus chaud que ses
-  voisins ; plusieurs voisins d'une rangée = chaîne), pas par l'IA ; PID : aucune base ouverte,
-  règle plus tard. YOLO11n-cls abandonné pour les vignettes (le recadrage coupait le défaut).
+Dépôts :
+- InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermographie PV).
+- OrthoStudio (mon logiciel) : worktree d'essai ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm.
+  Instance d'essai port 8001 SEULEMENT (lancement : voir CLAUDE.md, ORTHOSTUDIO_PROJECTS=
+  ~/OrthoStudio_essais/projets ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db). JAMAIS la production
+  (port 8000, /home/aex/TEST ).
 
-À faire maintenant, dans l'ordre (pose-moi les questions avant chaque choix structurant) :
-1. Comparer dji_sdk/lib/dirp_api.h (officiel) à dji_sdk/src/dirp_api_min.h ; corriger les écarts
-   de signatures ou de structures éventuels.
-2. Étape 2 : scripts/extract_data.py
-   - temperatures(chemin) → np.ndarray float32 (°C) via dji_irp -a measure (subprocess, fichier
-     temporaire), avec les paramètres de mesure facultatifs ; erreur claire si le modèle refuse
-     un réglage (M2EA : code −12 attendu → paramètres de l'image).
-   - metadonnees(chemin) : modèle, date, lat, lon, altitude absolue et relative, nacelle
-     yaw / pitch / roll, cap du drone, taille ; XMP DJI (drone-dji:…) + EXIF (exiftool ou exifread).
-   - data/raw_rjpegs/ → data/processed/metadata_db.json (+ matrices .npy si utile).
-   - Tests pytest sur dji_sdk/samples/ (températures plausibles, forme 512 × 640 ou 1024 × 1280).
-     Les exemples n'ont PAS de GPS : demande-moi de déposer de vraies photos de mes drones dans
-     data/raw_rjpegs/ pour tester les métadonnées.
-   - Questions à me poser : émissivité par défaut des panneaux (0,85 verre ?) ou celle de la photo ;
-     distance = altitude relative ?
-3. Règle « module hors service / string_failure » (à partir de la matrice de températures).
-4. Détecteur de modules (Ultralytics YOLO) : jeu Zenodo 10.5281/zenodo.16420123 « Thermal PV Panel
-   Detection and Fault Detection Dataset for UAV-Based Inspection » (vérifier volume, format,
-   licence avant de l'utiliser) → scripts/train_thermal.py. Option : Kaggle pkdarabi/solarpanel
-   (8 classes YOLO proches des miennes).
-5. scripts/analyze_anomalies.py (T_max, T_mean, ΔT par boîte, ΔT contre les modules sains voisins,
-   IEC TS 62446-3) puis scripts/export_orthostudio.py (projection sol plan depuis GPS + pose de la
-   nacelle ; reprendre les conventions de georef/ d'OrthoStudio : rotation_dji, footprint, cap par
-   modèle) → output/orthostudio_report.geojson.
+Commence par lire ~/InfraredSolarModules/REPRISE.md (état détaillé, résultats chiffrés, « À faire »),
+~/OrthoStudio_test/CLAUDE.md et ~/OrthoStudio_test/docs/reprise_session_2026-11-06.md, puis git log -8
+des deux dépôts. Ne refais pas ce qui est fait.
+
+État au 06/11/2026 (tout est poussé) :
+- Chaîne complète écrite et testée, mais JAMAIS essayée sur un vrai vol (je n'ai pas encore de R-JPEG
+  au-dessus de panneaux) : R-JPEG DJI → températures (scripts/extract_data.py : réglages de la photo par
+  défaut, --exact = émissivité 0,85 + température réfléchie mesurée) → modules détectés (détecteur maison
+  PyTorch, scripts/train_detector.py + detecteur.py ; Ultralytics écarté : AGPL) → forme de l'anomalie
+  (anomalies.py : seuil ΔT ≥ 3 K, point chaud / cellules chaudes / diode possible / sous-chaîne chaude /
+  module hors service) → polygones au sol (export_orthostudio.py) → output/orthostudio_report.geojson.
+- OrthoStudio : onglet Thermique, section « Anomalies PV importées » (thermique_pv.py, thermique_pv.js) ;
+  section « Anomalies PV » du rapport PDF et feuille Excel. Démo FICTIVE importée dans le projet 4 (8001).
+- Calculs lourds sur DELLODM (192.168.1.125, RTX 2080, Docker) : scripts/entrainer_dellodm.sh.
+
+Prochaine tâche : le PLAN DE CALEPINAGE (REPRISE.md, « À faire » n° 6) : plan des modules de la centrale
+avec un identifiant par module, pour indiquer ses anomalies au client. Avant tout choix structurant,
+pose-moi les questions métier listées dans REPRISE.md (plan existant du client ? numérotation ? chaînes /
+onduleurs ? source des modules ? livrables ?). Si je manque d'expérience, cherche sur internet, choisis le
+plus réaliste et justifie-le de façon critique et détaillée (contre-recherches, chiffres, risques) avant de
+commencer. Autres points ouverts : calage des positions sur l'orthophoto (1 à 3 m d'erreur sans RTK), essai
+sur un vrai vol (photos à déposer dans ~/InfraredSolarModules/data/raw_rjpegs/), essai de distance sur cible.
 
 Règles :
-- Ne jamais committer de binaire ni de photo DJI ; données dans data/ (non versionnées).
-- Télécharger un jeu ou un modèle .pt d'un tiers : me demander d'abord (un .pt = code exécuté).
-- Commits clairs en français, pousser sur ccr-f0a48b31-r292tn ; mettre à jour REPRISE.md à
-  chaque étape terminée.
-- Attends mon feu vert entre deux étapes.
+- Arrêt et rapport court à la fin de chaque point, puis attendre mon feu vert.
+- Aucun traitement NodeODM sans mon accord. Calculs lourds (entraînements…) sur DELLODM, pas sur AEX.
+- DELLODM : SSH par clé uniquement (ssh -o BatchMode=yes odm@192.168.1.125), JAMAIS par mot de passe.
+  La clé d'AEX a une phrase secrète : si l'agent SSH est vide (ssh-add -l), demande-moi de lancer ssh-add.
+- Jamais de binaire, de photo DJI ni de données tierces dans un dépôt (données dans ~/donnees_externes/,
+  data/ non versionné). Demander avant de télécharger un jeu ou un modèle .pt tiers.
+- Mettre à jour REPRISE.md, CLAUDE.md et docs/reprise_*.md à chaque étape. Commits en français, push
+  régulier : git -c 'credential.helper=!/home/aex/.local/bin/gh auth git-credential' push
+- Agents (sous-tâches) autorisés si utile.
 ```
 
 Notes :
-- Push en tant qu'`aex` si `git push` demande un identifiant :
-  `git -c 'credential.helper=!/home/aex/.local/bin/gh auth git-credential' push` (comme pour OrthoStudio).
-- Environnement : `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`.
+- Environnement : `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` ; SDK DJI :
+  `scripts/install_dji_sdk.sh <zip officiel DJI>`.
+- Données hors dépôt : `~/donnees_externes/` (DTU, Zenodo 16420123, images sans panneau `negatifs_dji/`).

@@ -266,13 +266,25 @@ journal par photo avec ses alertes). Par défaut seuls les modules en anomalie (
    `~/donnees_externes/dtu_irt_pv/` pour valider le classifieur (images .raw sans métadonnées).
    ✅ Classifieur validé sur DTU, seuil ΔT ≥ 3 K, rapport par forme (`scripts/anomalies.py`).
 3. ✅ Détecteur de modules maison (ci-dessus). Reste : essai sur de vrais R-JPEG.
-4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
-   service / chaîne.
+4. ✅ Remplacé par `detecteur.analyser` (T_max, T_moyenne, ΔT interne, écart aux voisins, module chaud).
 5. ✅ `scripts/export_orthostudio.py` et import OrthoStudio (ci-dessus). Reste : vrai vol, calage sur l'orthophoto,
    rapport PDF fait.
    Ancienne note : projection des boîtes (sol plan, pose de la nacelle ; voir aussi
    `georef/` d'OrthoStudio : `rotation_dji`, `footprint`, conventions de cap par modèle) →
    `output/orthostudio_report.geojson`.
+
+6. **Plan de calepinage** (demandé le 06/11/2026, pas commencé) : plan des modules de la centrale avec un
+   identifiant par module (ex. zone / rangée / table / ligne / colonne), pour **indiquer ses anomalies au
+   client** (« rangée 12, table 3, module L2-C14 ») dans le rapport et sur le terrain.
+   Dépend du calage des positions sur l'orthophoto (1 à 3 m d'erreur sans RTK = plus qu'un module).
+   Questions métier à poser AVANT de concevoir :
+   - le client a-t-il déjà un plan / une numérotation (PDF, DWG / DXF, tableur des chaînes) à reprendre, ou
+     faut-il en générer une ? Sens de numérotation (nord → sud, ouest → est, depuis l'entrée ?) ;
+   - niveau de détail : module seul, ou aussi chaîne (string) et onduleur / boîte de jonction ?
+   - source des modules : orthophoto couleur d'OrthoStudio (plus nette, sans reflets) ou mosaïque des
+     détections thermiques ; regroupement en tables par alignement ;
+   - livrables : planche PDF (vue d'ensemble + zooms par zone) dans le rapport, colonne « identifiant » dans
+     le tableau des anomalies, export pour le client (GeoJSON, DXF, CSV ?).
 
 ## Arborescence
 
