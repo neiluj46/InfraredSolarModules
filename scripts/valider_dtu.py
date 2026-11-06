@@ -8,7 +8,7 @@ Le jeu : 43 modules aux défauts connus (EL, courbes I-V), photographiés au Mav
 Pas de module sain : on ne mesure que la détection et la classe, pas les fausses alertes.
 
 Chaque image est ramenée à 40 × 24 (moyenne par blocs, comme une vignette vue de haut) puis standardisée
-comme à l'entraînement. Écrit output/validation_dtu.md et output/validation_dtu.json (non versionnés).
+comme à l'entraînement ; la décision finale passe par le seuil d'écart de `anomalies.py` (ΔT ≥ 3 K). Écrit output/validation_dtu.md et output/validation_dtu.json (non versionnés).
 """
 from __future__ import annotations
 
@@ -19,12 +19,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 import numpy as np
-import torch
-from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from train_classifier import (CLASSES, HAUTEUR, LARGEUR, MODELES, SORTIE, ReseauModule,  # noqa: E402
-                              probas, regrouper, standardiser)
+from anomalies import SEUIL_K, charger_modele, classer  # noqa: E402
+from train_classifier import SORTIE  # noqa: E402
 
 FORME = (605, 363)
 # dossier DTU → (libellé, classe attendue du projet, visible en IR d'après DTU / IEA PVPS 2025)
@@ -46,11 +44,6 @@ def conditions(nom):
     return (int(alt.group(1)) if alt else None, ecl.group(1) if ecl else None)
 
 
-def vignette(t):
-    """Matrice 605 × 363 → 40 × 24 par moyenne de blocs (PIL BOX, flottants)."""
-    return np.asarray(Image.fromarray(t.astype(np.float32), mode="F").resize((LARGEUR, HAUTEUR), Image.BOX))
-
-
 def charger(racine):
     lignes = []
     for f in sorted(Path(racine).glob("*/Module */IRT/*.raw")):
@@ -62,41 +55,40 @@ def charger(racine):
         alt, ecl = conditions(f.stem)
         lignes.append({"fichier": str(f.relative_to(racine)), "defaut": defaut, "module": module,
                        "altitude": alt, "eclairement": ecl, "dT_p99": round(float(np.percentile(t, 99.5)
-                       - np.median(t)), 2), "t": vignette(t)})
+                       - np.median(t)), 2), "t": t})
     return lignes
 
 
 def main(racine):
-    ck = torch.load(MODELES / "classifier.pt", weights_only=True)
-    modele = ReseauModule(len(ck["fines"]))
-    modele.load_state_dict(ck["etat"])
-    lignes = charger(racine)
-    x = torch.from_numpy(standardiser(np.stack([l.pop("t") for l in lignes]))).unsqueeze(1)
-    pf = probas(modele, x)
-    pg = regrouper(pf)
-    for l, a, b in zip(lignes, pg, pf):
-        l["classe"] = CLASSES[int(a.argmax())]
-        l["confiance"] = round(float(a.max()), 3)
-        l["classe_fine"] = ck["fines"][int(b.argmax())]
+    modele = charger_modele()
+    lignes = []
+    for l in charger(racine):          # par module, pour ne pas garder 640 matrices pleines en mémoire
+        r = classer([l.pop("t")], modele)[0]
+        l.update(classe=r["classe"], confiance=r["confiance"], classe_ia=r["classe_ia"],
+                 classe_fine=r["classe_fine"], ecart_K=r["ecart_K"])
+        lignes.append(l)
 
     par_defaut = defaultdict(list)
     for l in lignes:
         par_defaut[l["defaut"]].append(l)
     out = ["# Classifieur sur le jeu DTU (Mavic 3T, 43 modules)", "",
-           f"{len(lignes)} images. « Anomalie vue » = classe ≠ no_anomaly. ΔT = centile 99,5 − médiane du module.",
-           "", "| Défaut (DTU) | Images | Attendu | Bonne classe | Anomalie vue | ΔT médian | Classes prédites |",
-           "|---|---:|---|---:|---:|---:|---|"]
+           f"{len(lignes)} images. « Signalé » = classe ≠ no_anomaly ; « IA seule » sans le seuil, « final » avec "
+           f"le seuil ΔT ≥ {SEUIL_K:g} K. ΔT = centile 99,5 − médiane du module.",
+           "", "| Défaut (DTU) | Images | Attendu | Signalé IA seule | Signalé final | Bonne classe final | "
+           "ΔT médian | Classes finales |", "|---|---:|---|---:|---:|---:|---:|---|"]
     resume = {}
     for d, ls in sorted(par_defaut.items()):
         lib, cible, _ = ATTENDU.get(d, (d, None, None))
         n = len(ls)
         bon = sum(l["classe"] == cible for l in ls) if cible else None
         vue = sum(l["classe"] != "no_anomaly" for l in ls)
+        vue_ia = sum(l["classe_ia"] != "no_anomaly" for l in ls)
         dt = float(np.median([l["dT_p99"] for l in ls]))
         top = ", ".join(f"{c} {k}" for c, k in Counter(l["classe"] for l in ls).most_common())
-        resume[d] = {"images": n, "attendu": cible, "bonne_classe": bon, "anomalie_vue": vue, "dT_median": dt}
-        out.append(f"| {lib} | {n} | {cible or '—'} | {'—' if bon is None else f'{100 * bon / n:.0f} %'} | "
-                   f"{100 * vue / n:.0f} % | {dt:.1f} K | {top} |")
+        resume[d] = {"images": n, "attendu": cible, "bonne_classe": bon, "signale": vue, "signale_ia": vue_ia,
+                     "dT_median": dt}
+        out.append(f"| {lib} | {n} | {cible or '—'} | {100 * vue_ia / n:.0f} % | {100 * vue / n:.0f} % | "
+                   f"{'—' if bon is None else f'{100 * bon / n:.0f} %'} | {dt:.1f} K | {top} |")
 
     def tableau(cle, titre, ordre):
         out.extend(["", f"## Diodes et salissures selon {titre} (bonne classe)", "",

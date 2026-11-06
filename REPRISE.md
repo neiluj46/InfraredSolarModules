@@ -169,6 +169,23 @@ Constats :
 - Le jeu DTU ne sert qu'au test (trop petit pour l'entraînement, une seule centrale) ; le détecteur de
   modules n'est pas testé (images déjà découpées).
 
+
+**Seuil ajouté (`scripts/anomalies.py`, `classer`)** : classifieur consulté seulement si l'écart interne
+(centile 99,5 − médiane) ≥ 3 K. Sur DTU, modules signalés, sans seuil puis avec :
+
+| Défaut | IA seule | Avec seuil | Bonne classe |
+|---|---:|---:|---:|
+| fissures de cellules | 68 % | 0 % | — |
+| interconnexions | 86 % | 1 % | — |
+| PID | 80 % | 3 % | — |
+| verre fissuré | 84 % | 3 % | — |
+| diode court-circuitée | 100 % | 93 % | 0 % |
+| salissures (2 séries) | 94 % | 50 % | 15 % |
+
+Les salissures non signalées sont surtout les images à 200 W/m² (hors conditions IEC). Reste : classe des
+diodes (boîte de jonction) et des salissures ; module entier chaud (`offline_module`) contre les voisins.
+Tests : `tests/test_anomalies.py` (5).
+
 ## À faire
 
 1. ✅ `dji_irp` validé sur les 10 modèles d'exemple (SDK officiel v1.9), en-tête vérifié (ci-dessus).
@@ -178,7 +195,7 @@ Constats :
    **Reste** : tester GPS / altitudes / nacelle sur de vraies photos (pas encore de données) ; essai de
    distance sur le terrain. Jeu DTU (CC BY 4.0, 643 Mo) téléchargé hors dépôt dans
    `~/donnees_externes/dtu_irt_pv/` pour valider le classifieur (images .raw sans métadonnées).
-   ✅ Classifieur validé sur DTU (ci-dessus) : à n'utiliser qu'après le seuil ΔT ≥ 3 K.
+   ✅ Classifieur validé sur DTU, seuil ΔT ≥ 3 K en place (`scripts/anomalies.py`).
 3. Détecteur de modules (Ultralytics YOLO, jeu Zenodo 16420123), puis `scripts/train_thermal.py`.
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
@@ -195,6 +212,6 @@ dji_sdk/src/         dji_irp.c, dirp_api_min.h (versionnés)
 dji_sdk/lib|bin|samples/   installés par scripts/install_dji_sdk.sh
 models/classifier.pt classifieur des modules
 output/              rapports, GeoJSON
-scripts/             install_dji_sdk.sh, extract_data.py, train_classifier.py, valider_dtu.py
+scripts/             install_dji_sdk.sh, extract_data.py, anomalies.py, train_classifier.py, valider_dtu.py
 tests/               pytest (sautés sans SDK installé)
 ```
