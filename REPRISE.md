@@ -252,7 +252,8 @@ journal par photo avec ses alertes). Par défaut seuls les modules en anomalie (
   hauteur) ni panneaux ; sans RTK, 1 à 3 m d'erreur (plus que la largeur d'un module) : calage sur
   l'orthophoto d'OrthoStudio reste à faire.
 - **Import dans OrthoStudio** ✅ (06/11, branche `ccr-0037e643-x5jvxm`, f4c918c) : onglet Thermique, section
-  « Anomalies PV importées » (`orthostudio/thermique_pv.py`, `static/js/thermique_pv.js`). Pas encore dans le PDF.
+  « Anomalies PV importées » (`orthostudio/thermique_pv.py`, `static/js/thermique_pv.js`) ; section « Anomalies PV »
+  du rapport PDF et feuille Excel (af00d2a).
 
 ## À faire
 
@@ -268,7 +269,7 @@ journal par photo avec ses alertes). Par défaut seuls les modules en anomalie (
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
 5. ✅ `scripts/export_orthostudio.py` et import OrthoStudio (ci-dessus). Reste : vrai vol, calage sur l'orthophoto,
-   section du rapport PDF.
+   rapport PDF fait.
    Ancienne note : projection des boîtes (sol plan, pose de la nacelle ; voir aussi
    `georef/` d'OrthoStudio : `rotation_dji`, `footprint`, conventions de cap par modèle) →
    `output/orthostudio_report.geojson`.
