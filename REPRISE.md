@@ -277,7 +277,8 @@ journal par photo avec ses alertes). Par défaut seuls les modules en anomalie (
    `~/OrthoStudio_test/docs/calepinage_proposition.md` : numérotation générée + import client, module + table,
    modules saisis sur l'orthophoto couleur, livrables PDF / CSV / Excel / GeoJSON / DXF ; **C.1 ✅** modèle et
    numérotation, `orthostudio/calepinage.py` d'OrthoStudio ; **C.2 ✅** API et écran de saisie dans l'onglet
-   Thermique ; suite C.3 recalage et rattachement des anomalies) : plan des modules de la centrale avec un
+   Thermique ; **C.3 ✅** recalage des modules thermiques sur le plan et identifiant de module de chaque anomalie
+   (exporter avec `--tous` pour que le recalage tranche) ; suite C.4 livrables, C.5 import client) : plan des modules de la centrale avec un
    identifiant par module (ex. zone / rangée / table / ligne / colonne), pour **indiquer ses anomalies au
    client** (« rangée 12, table 3, module L2-C14 ») dans le rapport et sur le terrain.
    Dépend du calage des positions sur l'orthophoto (1 à 3 m d'erreur sans RTK = plus qu'un module).
