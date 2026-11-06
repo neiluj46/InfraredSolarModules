@@ -42,6 +42,9 @@ static const char *message(int32_t code)
     case DIRP_ERROR_UNSUPPORTED_FUNC: return "fonction non prise en charge pour ce modèle";
     case DIRP_ERROR_NOT_READY: return "conditions préalables non remplies";
     case DIRP_ERROR_ACTIVATION: return "activation du SDK refusée";
+    case DIRP_ERROR_INVALID_INI: return "fichier libv_list.ini invalide";
+    case DIRP_ERROR_INVALID_SUB_DLL: return "bibliothèque du modèle (libv_*.so) invalide";
+    case DIRP_ERROR_SUPER_MODE: return "photo en mode super-résolution non prise en charge";
     default: return "erreur inconnue";
     }
 }
@@ -128,7 +131,7 @@ int main(int argc, char **argv)
     size_t n = (size_t)res.width * res.height;
 
     /* Paramètres de mesure : non pris en charge par tous les modèles (M2EA : -12). */
-    dirp_measurement_params_t params;
+    dirp_measurement_params_t params = {0};
     int32_t ret_params = dirp_get_measurement_params(h, &params);
     int modifie = distance >= 0 || humidite >= 0 || emissivite >= 0 || reflexion > -1000;
     if (modifie) {
@@ -158,10 +161,20 @@ int main(int argc, char **argv)
                res.width, res.height, ver.rjpeg, ver.header, ver.curve);
         if (ret_params == DIRP_SUCCESS)
             printf(", \"measurement_params\": {\"distance\": %g, \"humidity\": %g, "
-                   "\"emissivity\": %g, \"reflection\": %g}}\n",
-                   params.distance, params.humidity, params.emissivity, params.reflection);
+                   "\"emissivity\": %g, \"reflection\": %g, \"ambient_temp\": %g}",
+                   params.distance, params.humidity, params.emissivity, params.reflection,
+                   params.ambient_temp);
         else
-            printf(", \"measurement_params\": null}\n");
+            printf(", \"measurement_params\": null");
+        dirp_measurement_params_range_t pl;
+        if (dirp_get_measurement_params_range && dirp_get_measurement_params_range(h, &pl) == DIRP_SUCCESS)
+            printf(", \"measurement_ranges\": {\"distance\": [%g, %g], \"humidity\": [%g, %g], "
+                   "\"emissivity\": [%g, %g], \"reflection\": [%g, %g], \"ambient_temp\": [%g, %g]}}\n",
+                   pl.distance.min, pl.distance.max, pl.humidity.min, pl.humidity.max,
+                   pl.emissivity.min, pl.emissivity.max, pl.reflection.min, pl.reflection.max,
+                   pl.ambient_temp.min, pl.ambient_temp.max);
+        else
+            printf(", \"measurement_ranges\": null}\n");
     } else if (!strcmp(action, "measure")) {
         if (!strcmp(format, "float32")) {
             float *t = malloc(n * sizeof(float));

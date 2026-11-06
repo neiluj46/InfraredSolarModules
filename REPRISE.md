@@ -94,9 +94,21 @@ module donne un meilleur compte rendu OrthoStudio (ΔT contre les modules sains 
 
 Volumes des jeux Zenodo non vérifiés (Zenodo inaccessible depuis le cloud).
 
+### Vérification de l'en-tête (06/11/2026)
+`dirp_api_min.h` comparé au `dirp_api.h` officiel du SDK v1.9 (`dji_sdk/lib/`, non versionné) :
+- **Écart corrigé** : `dirp_measurement_params_t` a un 5ᵉ champ `ambient_temp` en v1.9 ; sans lui,
+  `dirp_get_measurement_params` écrivait 4 octets au-delà de la structure (pile de `dji_irp`).
+- `dirp_resolution_t` en `int32_t` (comme l'officiel), codes d'erreur −15, −16, −32, −64 ajoutés.
+- `-a info` donne aussi `ambient_temp` et `measurement_ranges` (plages acceptées par le modèle,
+  `dirp_get_measurement_params_range`, déclarée faible : absente d'une v1.7, la clé vaut `null`).
+- Plages relevées sur les exemples : distance max **25 m** (M2EA, M3T, M30T, H20T/N, XTS) ou 300 m
+  (M4T, H30T, M5T), 1000 m (M3TD) ; une distance hors plage est refusée (−3), pas bornée.
+- Effet mesuré (M3T, DJI_0001) : émissivité 0,95 → 0,85 et distance 5 → 25 m : max 50,6 → 58,5 °C,
+  moyenne 32,3 → 34,6 °C.
+
 ## À faire
 
-1. Valider `dji_irp` sur les exemples M2EA, M3T, M30T, M4T (voir ci-dessus).
+1. ✅ `dji_irp` validé sur les 10 modèles d'exemple (SDK officiel v1.9), en-tête vérifié (ci-dessus).
 2. Étape 2 `scripts/extract_data.py` : `dji_irp -a measure` → matrice float32 ; EXIF / XMP
    (lat, lon, altitudes absolue et relative, nacelle yaw / pitch / roll, cap du drone) →
    `data/processed/metadata_db.json`. Tester sur **tes propres photos** (les exemples n'ont plus de GPS).
