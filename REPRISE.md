@@ -37,15 +37,13 @@ python3 -m venv .venv
   Données radiométriques intactes, mais **XMP et GPS retirés** par l'auteur du miroir ; les `.txt`
   (dumps exiftool d'origine, UTF-16 pour M2EA / H20T) gardent GPS et nacelle des 5 M3T.
 
-**⚠ Jamais exécuté** : la session cloud a refusé de lancer les bibliothèques DJI venues d'un miroir
-non officiel. Première chose à faire en local :
-```bash
-dji_sdk/bin/dji_irp -s dji_sdk/samples/M3T/DJI_0001_R.JPG -a info
-dji_sdk/bin/dji_irp -s dji_sdk/samples/M3T/DJI_0001_R.JPG -a measure -o /tmp/t.raw
-python3 -c "import numpy as n; t=n.fromfile('/tmp/t.raw',n.float32).reshape(512,640); print(t.min(),t.mean(),t.max())"
-```
-À essayer sur les 4 modèles. M2EA : le réglage des paramètres de mesure est probablement refusé
-(code −12, `thermal_parser` a un mode spécial) → garder ceux de l'image.
+**Validé en local le 29/10/2026** avec le **zip officiel DJI TSDK v1.9 (20260526)** (source par défaut
+du script ; le miroir v1.7 reste en secours, `--miroir`) : `dji_irp -a measure` OK sur les 10 modèles
+d'exemple du zip (H20N, H20T, H30T, M2EA, M30T, M3T, M3TD, M4T, M5T, XTS). L'en-tête officiel
+`dirp_api.h` est copié dans `dji_sdk/lib/` (comparaison avec `dirp_api_min.h` à faire). Les exemples
+officiels n'ont pas de GPS non plus : **photos réelles nécessaires** pour les métadonnées.
+M2EA : le réglage des paramètres de mesure est probablement refusé (code −12, `thermal_parser` a un
+mode spécial) → garder ceux de l'image (à confirmer).
 
 ### Classifieur de l'état des modules (`scripts/train_classifier.py`)
 Choix d'architecture : **deux étages** (détecteur de modules, puis classifieur par module), car la
