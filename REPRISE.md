@@ -208,6 +208,29 @@ décompte des cellules dépend de la résolution (≈ 3 cm/px conseillé) ; seui
 Hypothèse : trois sous-chaînes dans la largeur en portrait (modules 60 / 72 / 120 / 144 cellules), à vérifier
 sur les centrales. Le module doit être découpé sans le fond autour (le détecteur devra rogner).
 
+### Étape 3 — détecteur de modules (06/11/2026, `scripts/train_detector.py`, `scripts/detecteur.py`)
+Choix (avec l'utilisateur) : réseau **maison**, PyTorch seul (BSD), entraîné de zéro, aucun poids tiers.
+Ultralytics YOLO écarté : AGPL, licence payante revendiquée même en usage interne.
+- Données : Zenodo 16420123 (CC BY 4.0, Mavic 3T, 235 / 83 / 35 images, 26 678 modules), hors dépôt dans
+  `~/donnees_externes/zenodo_pv_detection/` (AEX) et `~/infrared/donnees/` (DELLODM).
+- Les rangées sont inclinées mais les annotations sont des cadres **droits** : détection par **centres**
+  (CenterNet ; centre du cadre droit = centre du module), petit U-Net 2,1 M paramètres, sortie au pas de 4.
+  Inclinaison : angles quadruplés des gradients autour du centre ; rectangle incliné déduit du cadre droit
+  (vers 45° : proportions médianes des modules de la photo).
+- Entrée bornée aux centiles 1-99 puis standardisée ; **défauts simulés** à l'entraînement (points chauds,
+  zones chaudes, taches froides) : sans eux, un point chaud de +12 K faisait perdre son module au détecteur.
+- **Entraînement sur DELLODM** (RTX 2080, Docker `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`, 12 Go) :
+  `scripts/entrainer_dellodm.sh [epochs|suivre|rapatrier]`, 6 s par époque (160 s sur AEX), 60 époques ≈ 7 min.
+  Poids : `models/detector.pt` (8,6 Mo, non versionné : `models/` est ignoré), sur AEX et DELLODM.
+- Résultats (test, 35 images, 2 363 modules, IoU ≥ 0,5) : précision 94,8 %, rappel 85,5 %, F1 0,90 ;
+  **modules entiers : 98,1 % trouvés** ; 90 % des manqués et 75 % des faux positifs sont des modules coupés par
+  le bord de l'image, écartés de l'analyse (`complet`). Erreur médiane du centre : 2 px.
+  Point chaud collé sur un module sur trois des images de test : 99 % des modules toujours trouvés.
+- `detecteur.analyser(t)` : matrice de températures → modules entiers, forme de l'anomalie, module chaud.
+  Test de bout en bout sur une image Zenodo en pseudo-températures (`tests/test_detecteur.py`).
+- Limites : une seule centrale d'entraînement (modules en paysage, deux rangées par table) ; JPEG convertis,
+  pas de R-JPEG : à vérifier sur tes vols. Seuil de score 0,3 (0,4 : précision 96,6 %, rappel 84 %).
+
 ## À faire
 
 1. ✅ `dji_irp` validé sur les 10 modèles d'exemple (SDK officiel v1.9), en-tête vérifié (ci-dessus).
@@ -218,7 +241,7 @@ sur les centrales. Le module doit être découpé sans le fond autour (le détec
    distance sur le terrain. Jeu DTU (CC BY 4.0, 643 Mo) téléchargé hors dépôt dans
    `~/donnees_externes/dtu_irt_pv/` pour valider le classifieur (images .raw sans métadonnées).
    ✅ Classifieur validé sur DTU, seuil ΔT ≥ 3 K, rapport par forme (`scripts/anomalies.py`).
-3. Détecteur de modules (Ultralytics YOLO, jeu Zenodo 16420123), puis `scripts/train_thermal.py`.
+3. ✅ Détecteur de modules maison (ci-dessus). Reste : essai sur de vrais R-JPEG.
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
 5. `scripts/export_orthostudio.py` : projection des boîtes (sol plan, pose de la nacelle ; voir aussi
@@ -234,6 +257,7 @@ dji_sdk/src/         dji_irp.c, dirp_api_min.h (versionnés)
 dji_sdk/lib|bin|samples/   installés par scripts/install_dji_sdk.sh
 models/classifier.pt classifieur des modules
 output/              rapports, GeoJSON
-scripts/             install_dji_sdk.sh, extract_data.py, anomalies.py, train_classifier.py, valider_dtu.py
+scripts/             install_dji_sdk.sh, extract_data.py, anomalies.py, detecteur.py, train_detector.py,
+                     entrainer_dellodm.sh, train_classifier.py, valider_dtu.py
 tests/               pytest (sautés sans SDK installé)
 ```

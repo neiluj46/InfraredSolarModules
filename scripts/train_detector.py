@@ -13,7 +13,8 @@ taille du cadre droit (pas de 4 px) ; `detecteur.py` en tire l'inclinaison (bord
 incliné du module.
 
 Entrée : image en niveaux de gris standardisée (moyenne 0, écart type 1), pour accepter plus tard une matrice
-de températures. Augmentations : découpes 256 × 256, retournements, rotations de 90°, inversion des contrastes
+de températures (bornée aux centiles 1-99). Augmentations : défauts simulés (points chauds, zones chaudes, taches
+froides : un détecteur entraîné sans eux perdait les modules à point chaud), découpes 256 × 256, retournements, rotations de 90°, inversion des contrastes
 (modules plus froids que le sol le matin), contraste ±.
 
     .venv/bin/python scripts/train_detector.py [--donnees <dossier du jeu>] [--epochs 60]
@@ -44,11 +45,16 @@ MODELES, SORTIE = RACINE / "models", RACINE / "output"
 PAS = 4               # sortie au quart de la résolution
 DECOUPE = 256
 SEUIL_CENTRE = 0.3
+APPAREIL = torch.device("cuda" if torch.cuda.is_available() else "cpu")   # RTX 2080 sur DELLODM
 
 
 def standardiser(img):
+    """Bornée aux centiles 1 et 99 puis ramenée à moyenne 0, écart type 1 : un point très chaud sature au lieu
+    d'écraser le contraste du reste de l'image (il faisait perdre son module au détecteur, essai du 06/11)."""
     img = img.astype(np.float32)
-    return (img - img.mean()) / max(float(img.std()), 1e-6)
+    lo, hi = np.percentile(img, (1, 99))
+    img = np.clip(img, lo, hi)
+    return ((img - img.mean()) / max(float(img.std()), 1e-6)).astype(np.float32)
 
 
 def charger(dossier, part):
@@ -98,8 +104,37 @@ def cibles(cadres, h, w):
     return chaleur, taille, masque
 
 
+def defauts_simules(img, cadres, rng):
+    """Colle des défauts sur une partie des modules (le jeu Zenodo en a peu) : point chaud (une à quelques
+    cellules), tiers de module chaud, tache froide ; amplitude en écarts types de l'image."""
+    img = img.copy()
+    h, w = img.shape
+    for cx, cy, bw, bh in cadres:
+        if rng.random() > 0.25:
+            continue
+        k = rng.random()
+        if k < 0.6:                                         # point chaud près du centre
+            r = rng.uniform(0.06, 0.2) * min(bw, bh)
+            x, y = cx + rng.uniform(-0.25, 0.25) * bw, cy + rng.uniform(-0.25, 0.25) * bh
+            a = rng.uniform(1, 6)
+        elif k < 0.85:                                      # zone chaude plus large (sous-chaîne)
+            r = rng.uniform(0.25, 0.4) * min(bw, bh)
+            x, y = cx + rng.uniform(-0.15, 0.15) * bw, cy + rng.uniform(-0.15, 0.15) * bh
+            a = rng.uniform(0.5, 2.5)
+        else:                                               # tache froide (salissure, ombre)
+            r = rng.uniform(0.06, 0.2) * min(bw, bh)
+            x, y = cx + rng.uniform(-0.25, 0.25) * bw, cy + rng.uniform(-0.25, 0.25) * bh
+            a = -rng.uniform(0.5, 2)
+        x0, x1, y0, y1 = int(max(0, x - r)), int(min(w, x + r + 1)), int(max(0, y - r)), int(min(h, y + r + 1))
+        if x1 > x0 and y1 > y0:
+            img[y0:y1, x0:x1] += a
+    return img
+
+
 def augmenter(img, cadres, rng):
-    """Découpe carrée, retournements, rotation de 90°, inversion, contraste."""
+    """Défauts simulés, découpe carrée, retournements, rotation de 90°, inversion, contraste."""
+    if rng.random() < 0.7:
+        img = defauts_simules(img, cadres, rng)
     h, w = img.shape
     y0, x0 = rng.integers(0, h - DECOUPE + 1), rng.integers(0, w - DECOUPE + 1)
     img = img[y0:y0 + DECOUPE, x0:x0 + DECOUPE].copy()
@@ -172,7 +207,7 @@ def decoder(chaleur_logits, taille, seuil=SEUIL_CENTRE, max_n=2000):
         s, i = s.topk(max_n)
         ys, xs = ys[i], xs[i]
     w, h = taille[0, 0, ys, xs] * 16, taille[0, 1, ys, xs] * 16
-    return torch.stack([(xs.float() + 0.5) * PAS, (ys.float() + 0.5) * PAS, w, h, s], 1).numpy()
+    return torch.stack([(xs.float() + 0.5) * PAS, (ys.float() + 0.5) * PAS, w, h, s], 1).cpu().numpy()
 
 
 def predire(modele, img, seuil=SEUIL_CENTRE):
@@ -181,6 +216,7 @@ def predire(modele, img, seuil=SEUIL_CENTRE):
     h, w = x.shape
     ph, pw = (-h) % 16, (-w) % 16
     t = torch.from_numpy(np.pad(x, ((0, ph), (0, pw)), mode="reflect"))[None, None]
+    t = t.to(next(modele.parameters()).device)
     modele.eval()
     with torch.no_grad():
         c, s = modele(t)
@@ -222,18 +258,19 @@ def evaluer(modele, jeu, seuil=SEUIL_CENTRE, iou_min=0.5):
 
 # --------------------------------------------------------------------------------------------- entraînement
 
-def entrainer(dossier, epochs, lot=8, graine=0):
+def entrainer(dossier, epochs, lot=16, graine=0):
     torch.manual_seed(graine)
     rng = np.random.default_rng(graine)
     train, val = charger(dossier, "train"), charger(dossier, "val")
-    modele = ReseauCentres()
+    modele = ReseauCentres().to(APPAREIL)
     opt = torch.optim.AdamW(modele.parameters(), lr=2e-3, weight_decay=1e-4)
     pas_par_epoch = 4 * len(train) // lot                    # 4 découpes par image et par époque
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, 2e-3, total_steps=epochs * pas_par_epoch)
+    print(f"calcul sur {APPAREIL}", flush=True)
     meilleur, etat, hist, debut = -1.0, None, [], 1
     reprise = SORTIE / "detector_reprise.pt"
     if reprise.is_file():
-        r = torch.load(reprise, weights_only=True)
+        r = torch.load(reprise, weights_only=True, map_location=APPAREIL)
         modele.load_state_dict(r["modele"])
         opt.load_state_dict(r["opt"])
         sched.load_state_dict(r["sched"])
@@ -253,8 +290,8 @@ def entrainer(dossier, epochs, lot=8, graine=0):
                 cs.append(c)
                 ts.append(t)
                 ms.append(m)
-            x = torch.from_numpy(np.stack(xs))[:, None]
-            c, t, m = (torch.from_numpy(np.stack(v)) for v in (cs, ts, ms))
+            x = torch.from_numpy(np.stack(xs))[:, None].to(APPAREIL)
+            c, t, m = (torch.from_numpy(np.stack(v)).to(APPAREIL) for v in (cs, ts, ms))
             pc, pt = modele(x)
             l_t = (F.l1_loss(pt, t, reduction="none") * m[:, None]).sum() / m.sum().clamp(min=1)
             perte = perte_focale(pc[:, 0], c) + 0.1 * l_t
@@ -267,7 +304,7 @@ def entrainer(dossier, epochs, lot=8, graine=0):
         if ep % 5 == 0 or ep == epochs:
             ligne["val"] = evaluer(modele, val)
             if ligne["val"]["f1"] > meilleur:
-                meilleur, etat = ligne["val"]["f1"], {k: v.clone() for k, v in modele.state_dict().items()}
+                meilleur, etat = ligne["val"]["f1"], {k: v.detach().cpu().clone() for k, v in modele.state_dict().items()}
         hist.append(ligne)
         print(json.dumps(ligne, ensure_ascii=False), flush=True)
         if ep % 5 == 0:                                       # reprise possible après un arrêt
@@ -284,7 +321,7 @@ def entrainer(dossier, epochs, lot=8, graine=0):
 
 
 def charger_modele(chemin=MODELES / "detector.pt"):
-    ck = torch.load(chemin, weights_only=True)
+    ck = torch.load(chemin, weights_only=True, map_location="cpu")
     m = ReseauCentres(ck.get("canaux", 24))
     m.load_state_dict(ck["etat"])
     m.eval()
@@ -295,11 +332,12 @@ def main():
     a = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     a.add_argument("--donnees", type=Path, default=DONNEES)
     a.add_argument("--epochs", type=int, default=60)
+    a.add_argument("--lot", type=int, default=16)
     a.add_argument("--eval-only", type=Path)
     o = a.parse_args()
     torch.set_num_threads(os.cpu_count() or 4)
-    chemin = o.eval_only or entrainer(o.donnees, o.epochs)
-    modele = charger_modele(chemin)
+    chemin = o.eval_only or entrainer(o.donnees, o.epochs, o.lot)
+    modele = charger_modele(chemin).to(APPAREIL)
     res = {p: evaluer(modele, charger(o.donnees, p)) for p in ("val", "test")}
     SORTIE.mkdir(exist_ok=True)
     (SORTIE / "detector_report.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")

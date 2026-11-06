@@ -67,7 +67,9 @@ def rectangle_proportions(w, h, theta, r):
 
 def detecter(img, modele=None, seuil=td.SEUIL_CENTRE):
     """Image (niveaux de gris ou températures) → liste de modules {cx, cy, angle_deg, longueur, largeur, coins,
-    score, incertain} ; longueur ≥ largeur, angle de la longueur par rapport à l'axe x (sens image)."""
+    score, incertain, complet} ; longueur ≥ largeur, angle de la longueur par rapport à l'axe x (sens image).
+    `complet` est faux pour un module coupé par le bord de l'image (90 % des manqués et 75 % des faux positifs
+    du jeu de test Zenodo y sont)."""
     modele = modele or td.charger_modele()
     img = np.asarray(img, dtype=np.float32)
     bruts = []
@@ -87,7 +89,8 @@ def detecter(img, modele=None, seuil=td.SEUIL_CENTRE):
                  for i, j in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
         out.append({"cx": round(float(cx), 1), "cy": round(float(cy), 1),
                     "angle_deg": round(math.degrees(th) % 180, 1), "longueur": round(a, 1), "largeur": round(b, 1),
-                    "coins": coins, "score": round(float(s), 3), "incertain": incertain})
+                    "coins": coins, "score": round(float(s), 3), "incertain": incertain,
+                    "complet": all(1 <= x <= img.shape[1] - 2 and 1 <= y <= img.shape[0] - 2 for x, y in coins)})
     return out
 
 
@@ -105,8 +108,9 @@ def decouper(t, m, marge=MARGE, pas=1.0):
 
 def analyser(t, modele=None, seuil_k=anomalies.SEUIL_K):
     """Matrice de températures d'une photo → modules détectés, chacun avec sa forme d'anomalie ; `module_chaud`
-    remplace « sain » pour un module plus chaud que la médiane des autres de la photo."""
-    mods = detecter(t, modele)
+    remplace « sain » pour un module plus chaud que la médiane des autres de la photo. Les modules coupés par le
+    bord de l'image sont écartés (incomplets : ils seront vus entiers sur une photo voisine du vol)."""
+    mods = [m for m in detecter(t, modele) if m["complet"]]
     moyennes = []
     for m in mods:
         z = decouper(t, m)

@@ -69,25 +69,32 @@ def test_iou_cadres():
     assert td.iou_cadres(a, np.array([[15, 10, 10, 10]], float))[0, 0] == pytest.approx(1 / 3)
 
 
-@pytest.mark.skipif(not (RACINE / "models" / "detector.pt").is_file(), reason="détecteur non entraîné")
-def test_analyser_rangee_synthetique():
-    """Rangée de 6 modules inclinés à 20° ; le 3ᵉ porte un point chaud, le 5ᵉ est chaud partout."""
-    n = 512
-    yy, xx = np.mgrid[0:n, 0:640].astype(float)
-    th = math.radians(20)
-    u, v = (xx - 320) * math.cos(th) + (yy - 256) * math.sin(th), -(xx - 320) * math.sin(th) + (yy - 256) * math.cos(th)
-    t = np.full((n, 640), 15.0)
-    for k in range(6):
-        cu = (k - 2.5) * 52
-        dans = (abs(u - cu) < 24) & (abs(v) < 40)
-        t[dans] = 30 + (6 if k == 4 else 0)
-        if k == 2:
-            t[dans & (abs(u - cu) < 5) & (abs(v - 15) < 5)] += 12
-    t = ndimage.gaussian_filter(t, 0.8)
-    mods = de.analyser(t)
-    assert len(mods) >= 4
-    formes = {m["forme"] for m in mods}
-    assert "point_chaud" in formes or "cellules_chaudes" in formes
+@pytest.mark.skipif(not (RACINE / "models" / "detector.pt").is_file() or not (td.DONNEES / "test").is_dir(),
+                    reason="détecteur non entraîné ou jeu Zenodo absent")
+def test_analyser_image_reelle():
+    """Image du jeu de test Zenodo en pseudo-températures (15-45 °C) : point chaud d'une cellule collé sur un
+    module, un autre module chauffé de 8 K partout ; les autres modules entiers doivent rester sains."""
+    from PIL import Image
+
+    f = sorted((td.DONNEES / "test" / "images").glob("*.jpg"))[12]
+    t = 15 + np.asarray(Image.open(f).convert("L"), dtype=np.float64) / 255 * 30
+    modele = td.charger_modele()
+    mods = [m for m in de.detecter(t, modele) if m["complet"]]
+    assert len(mods) >= 20
+    a, b = mods[len(mods) // 3], mods[2 * len(mods) // 3]
+    r = int(0.06 * a["largeur"]) + 1
+    t[int(a["cy"]) - r:int(a["cy"]) + r, int(a["cx"]) - r:int(a["cx"]) + r] += 15
+    yy, xx = np.mgrid[0:t.shape[0], 0:t.shape[1]]
+    th = math.radians(b["angle_deg"])
+    u = (xx - b["cx"]) * math.cos(th) + (yy - b["cy"]) * math.sin(th)
+    v = -(xx - b["cx"]) * math.sin(th) + (yy - b["cy"]) * math.cos(th)
+    t[(abs(u) < b["longueur"] / 2) & (abs(v) < b["largeur"] / 2)] += 8
+    res = de.analyser(t, modele)
+    proche = lambda m: min(res, key=lambda q: math.hypot(q["cx"] - m["cx"], q["cy"] - m["cy"]))  # noqa: E731
+    assert proche(a)["forme"] in ("point_chaud", "cellules_chaudes", "diode_possible")
+    assert proche(b)["forme"] == "module_chaud"
+    autres = [q for q in res if q is not proche(a) and q is not proche(b)]
+    assert np.mean([q["forme"] == "sain" for q in autres]) >= 0.9
 
 
 def test_entrainement_eclair_et_reprise(tmp_path, monkeypatch):
