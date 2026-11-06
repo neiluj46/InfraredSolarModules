@@ -89,7 +89,7 @@ module donne un meilleur compte rendu OrthoStudio (ΔT contre les modules sains 
 | Kaggle `pkdarabi/solarpanel` (2 723 images, 7 772 boîtes YOLO, 8 classes : hotspot simple / multiple, diode simple / multiple, sous-chaîne court-circuitée simple / multiple, chaîne ouverte, polarité inversée) | détection directe, la plus proche de tes classes | kaggle.com |
 | THED-PV (Zenodo 17404247, Scientific Data 2025, CC-BY 4.0) | redressement géométrique (homographie) pour l'export | zenodo.org |
 | Mendeley 82vzccxb6y (277 images, Zenmuse XT / Matrice 100) | validation sur données réelles | data.mendeley.com |
-| DTU, EPJ Photovoltaics 2025 (radiométrique, vraies diodes en défaut) | validation | voir l'article |
+| DTU, EPJ Photovoltaics 2025 (radiométrique, M3T, 8-20 m, EL et I-V ; doi 10.11583/DTU.29665346.v1, CC BY 4.0, 643 Mo) | validation du classifieur | téléchargé dans `~/donnees_externes/dtu_irt_pv/` |
 | Modèle YOLOv9 pré-entraîné `P-Darabi/SolarPanelsDefectDetector` (MIT, 8 classes ci-dessus) | comparaison ; `.pt` = pickle, à charger en connaissance de cause | GitHub |
 
 Volumes des jeux Zenodo non vérifiés (Zenodo inaccessible depuis le cloud).
@@ -107,14 +107,52 @@ Volumes des jeux Zenodo non vérifiés (Zenodo inaccessible depuis le cloud).
   moyenne 32,3 → 34,6 °C.
 - Avec la v1.9, le M2EA (et H20T, XTS) **accepte** le réglage de l'émissivité : plus de −12 attendu.
 
+### Réglages de mesure (06/11/2026, décidés avec l'utilisateur)
+Deux modes dans `scripts/extract_data.py` :
+- **par défaut : réglages de la photo** (ε, distance, humidité, T réfléchie du pilote ; souvent 0,95 / 5 m /
+  50 % / 25 °C). Mêmes chiffres que DJI Pilot et OrthoStudio. Les anomalies se jugent sur des **écarts**
+  avec les modules voisins.
+- **`--exact --reflexion <°C>` : températures exactes** : ε 0,85 (verre ; ZAE Bayern, Buerhop : 0,82 au
+  maximum en vue perpendiculaire, chute au-delà de ~40°) **et** T réfléchie mesurée sur place (aluminium
+  froissé), obligatoire.
+
+Calcul de Planck (8-14 µm, verre ε 0,85, vrai écart 20 K) :
+
+| Ciel reflété | ε 0,95 / Tr 25 | ε 0,85 / Tr 25 | ε 0,85 / Tr = ciel |
+|---|---|---|---|
+| −30 °C | 19,1 K | 21,1 K | 20,0 K |
+| −10 °C | 18,8 K | 20,7 K | 20,0 K |
+| +10 °C | 18,5 K | 20,3 K | 20,0 K |
+
+Vrai 55 °C sous ciel à −30 °C : 46,8 / 49,1 / 55,0 °C. Donc 0,85 seule n'apporte rien : soit la photo,
+soit 0,85 + T réfléchie.
+
+**Distance** : celle de la photo, même en mode exact. La correction DJI à 25 m multiplie les écarts par
+1,29 (M4T ; 1,66 à 50 m, 2,09 à 100 m), 1,19 (H30T), 1,16 (M3T), 1,01 (M30T). Sur le M4T, elle est
+indépendante de l'humidité (20-90 %) : ce n'est pas un modèle d'atmosphère (absorption réelle : 1 à 3 %
+sur 25 m). Essai de terrain à prévoir : cible de température connue (bouillotte + thermomètre de contact)
+à 5, 15, 25, 40 m.
+
+Sur les exemples (`dji_sdk/samples`), le mode exact (Tr −20 °C) monte les médianes de +5 à +15 °C ; le
+M5T `DJI_0004/0005` est saturé à −20 °C (bas de gamme de mesure).
+
+Limites connues : fissures de cellules (≤ 1 K), PID (2 K) et verre fissuré (2,7 K) sont à peine au-dessus
+d'un module sain (1,5 K) selon DTU : classe « fissures » = suspicion, à confirmer par EL. Conditions IEC TS
+62446-3 : > 600 W/m², vent < 28 km/h, ≤ 3 cm/px (≈ 22 m en M3T). Sans RTK, 1 à 3 m d'erreur de position :
+caler les anomalies sur l'orthophoto couleur.
+
+Sources : Raptor Maps (M3T, ε 0,95), Sitemark (IEC 62446-3), Buerhop / PV Tech, DTU IEA PVPS 2025,
+EPJ Photovoltaics 2025 (DTU).
+
 ## À faire
 
 1. ✅ `dji_irp` validé sur les 10 modèles d'exemple (SDK officiel v1.9), en-tête vérifié (ci-dessus).
-2. Étape 2 `scripts/extract_data.py` : `dji_irp -a measure` → matrice float32 ; EXIF / XMP
-   (lat, lon, altitudes absolue et relative, nacelle yaw / pitch / roll, cap du drone) →
-   `data/processed/metadata_db.json`. Tester sur **tes propres photos** (les exemples n'ont plus de GPS).
-   Questions ouvertes : émissivité par défaut des panneaux (0,85 verre ?) ou celle de la photo ;
-   distance = altitude relative bornée à la plage du modèle (25 m sur M3T / M30T / M2EA) ?
+2. ✅ Étape 2 `scripts/extract_data.py` (06/11) : `dji_irp -a measure` → matrice float32 ; EXIF / XMP /
+   MakerNote (lat, lon, altitudes, nacelle, attitude du drone) → `data/processed/metadata_db.json` ; JPEG
+   visibles marqués `radiometrique: false`. Tests : `tests/test_extract_data.py` (9, sur les exemples DJI).
+   **Reste** : tester GPS / altitudes / nacelle sur de vraies photos (pas encore de données) ; essai de
+   distance sur le terrain. Jeu DTU (CC BY 4.0, 643 Mo) téléchargé hors dépôt dans
+   `~/donnees_externes/dtu_irt_pv/` pour valider le classifieur (images .raw sans métadonnées).
 3. Détecteur de modules (Ultralytics YOLO, jeu Zenodo 16420123), puis `scripts/train_thermal.py`.
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
@@ -131,5 +169,6 @@ dji_sdk/src/         dji_irp.c, dirp_api_min.h (versionnés)
 dji_sdk/lib|bin|samples/   installés par scripts/install_dji_sdk.sh
 models/classifier.pt classifieur des modules
 output/              rapports, GeoJSON
-scripts/             install_dji_sdk.sh, train_classifier.py
+scripts/             install_dji_sdk.sh, extract_data.py, train_classifier.py
+tests/               pytest (sautés sans SDK installé)
 ```
