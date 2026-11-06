@@ -7,7 +7,8 @@
 #
 # Accès SSH par clé uniquement (clé d'AEX chargée dans l'agent : ssh-add). Image officielle PyTorch ;
 # le conteneur tourne avec l'utilisateur odm (fichiers modifiables ensuite), dépendances dans /travail/.pip.
-# Le jeu Zenodo 16420123 est copié une fois dans ~/infrared/donnees (15 Mo).
+# Le jeu Zenodo 16420123 est copié une fois dans ~/infrared/donnees (15 Mo), les images sans panneau dans
+# ~/infrared/negatifs (106 Mo).
 set -euo pipefail
 HOTE=${DELLODM:-odm@192.168.1.125}
 IMAGE=pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
@@ -28,8 +29,10 @@ EPOCHS=${1:-60}
 rsync -a "$ICI/scripts/train_detector.py" "$HOTE:infrared/scripts/"
 "${SSH[@]}" "test -d ~/infrared/'$JEU'" || \
   rsync -a "$HOME/donnees_externes/zenodo_pv_detection/extrait/" "$HOTE:infrared/donnees/"
+# images sans panneau (exemples DJI en températures, .npy ; licence DJI : jamais dans le dépôt)
+rsync -a "$HOME/donnees_externes/negatifs_dji/" "$HOTE:infrared/negatifs/"
 "${SSH[@]}" "docker rm -f $NOM >/dev/null 2>&1 || true
   docker run -d --name $NOM --gpus all --user \$(id -u):\$(id -g) -e HOME=/travail/.pip \
     -v ~/infrared:/travail -w /travail $IMAGE \
-    bash -c 'pip install -q --user scipy pillow && python scripts/train_detector.py --donnees \"$JEU\" --epochs $EPOCHS'"
+    bash -c 'pip install -q --user scipy pillow && python scripts/train_detector.py --donnees \"$JEU\" --negatifs negatifs --epochs $EPOCHS'"
 echo "Lancé sur $HOTE ($NOM). Journal : $0 suivre"

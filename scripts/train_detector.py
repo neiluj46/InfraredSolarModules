@@ -57,6 +57,24 @@ def standardiser(img):
     return ((img - img.mean()) / max(float(img.std()), 1e-6)).astype(np.float32)
 
 
+NEGATIFS = Path.home() / "donnees_externes" / "negatifs_dji"
+FOIS_NEGATIFS = 3     # chaque image sans panneau compte trois fois par époque
+
+
+def charger_negatifs(dossier, part):
+    """Images **sans panneau** (exemples du SDK DJI en températures, .npy) : `train` (31) apprend au réseau à ne
+    rien voir sur un toit, une ville, un paysage ; `eval` (23) mesure les fausses détections. Sans elles, le
+    détecteur entraîné sur des centrales seules trouvait des « modules » partout (climatiseurs, bords de toit)."""
+    d = Path(dossier) / part
+    return [(standardiser(np.load(f)), np.zeros((0, 4), np.float32)) for f in sorted(d.glob("*.npy"))] \
+        if d.is_dir() else []
+
+
+def fausses_detections(modele, negatifs, seuil=SEUIL_CENTRE):
+    """Nombre moyen de détections par image sans panneau."""
+    return round(float(np.mean([len(predire(modele, img, seuil)) for img, _ in negatifs])), 2) if negatifs else None
+
+
 def charger(dossier, part):
     """[(image float32 standardisée (H, W), cadres (N, 4) cx, cy, w, h en px)]."""
     out = []
@@ -258,15 +276,20 @@ def evaluer(modele, jeu, seuil=SEUIL_CENTRE, iou_min=0.5):
 
 # --------------------------------------------------------------------------------------------- entraînement
 
-def entrainer(dossier, epochs, lot=16, graine=0):
+def entrainer(dossier, epochs, lot=16, graine=0, negatifs=NEGATIFS):
     torch.manual_seed(graine)
     rng = np.random.default_rng(graine)
     train, val = charger(dossier, "train"), charger(dossier, "val")
+    neg_train = charger_negatifs(negatifs, "train") if negatifs else []
+    pas_par_epoch = 4 * len(train) // lot
+    train = train + neg_train * FOIS_NEGATIFS
+    print(f"{len(neg_train)} image(s) sans panneau ajoutée(s) ×{FOIS_NEGATIFS}", flush=True)
     modele = ReseauCentres().to(APPAREIL)
     opt = torch.optim.AdamW(modele.parameters(), lr=2e-3, weight_decay=1e-4)
-    pas_par_epoch = 4 * len(train) // lot                    # 4 découpes par image et par époque
+    # 4 découpes par image de centrale et par époque (pas_par_epoch, plus haut, avant l'ajout des négatifs)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, 2e-3, total_steps=epochs * pas_par_epoch)
     print(f"calcul sur {APPAREIL}", flush=True)
+    neg_eval = charger_negatifs(negatifs, "eval") if negatifs else []
     meilleur, etat, hist, debut = -1.0, None, [], 1
     reprise = SORTIE / "detector_reprise.pt"
     if reprise.is_file():
@@ -303,8 +326,11 @@ def entrainer(dossier, epochs, lot=16, graine=0):
         ligne = {"epoch": ep, "perte": round(cumul / pas_par_epoch, 4), "duree_s": round(time.time() - t0, 1)}
         if ep % 5 == 0 or ep == epochs:
             ligne["val"] = evaluer(modele, val)
-            if ligne["val"]["f1"] > meilleur:
-                meilleur, etat = ligne["val"]["f1"], {k: v.detach().cpu().clone() for k, v in modele.state_dict().items()}
+            ligne["val"]["fausses_sans_panneau"] = fausses_detections(modele, neg_eval)
+            # modèle gardé : celui de la dernière époque (fin du cycle du pas d'apprentissage). Choisir le meilleur F1
+            # gardait un modèle du début, à 9 fausses détections par image sans panneau (essai du 06/11).
+            meilleur = ligne["val"]["f1"]
+            etat = {k: v.detach().cpu().clone() for k, v in modele.state_dict().items()}
         hist.append(ligne)
         print(json.dumps(ligne, ensure_ascii=False), flush=True)
         if ep % 5 == 0:                                       # reprise possible après un arrêt
@@ -333,12 +359,14 @@ def main():
     a.add_argument("--donnees", type=Path, default=DONNEES)
     a.add_argument("--epochs", type=int, default=60)
     a.add_argument("--lot", type=int, default=16)
+    a.add_argument("--negatifs", type=Path, default=NEGATIFS, help="images sans panneau (train/, eval/ en .npy)")
     a.add_argument("--eval-only", type=Path)
     o = a.parse_args()
     torch.set_num_threads(os.cpu_count() or 4)
-    chemin = o.eval_only or entrainer(o.donnees, o.epochs, o.lot)
+    chemin = o.eval_only or entrainer(o.donnees, o.epochs, o.lot, negatifs=o.negatifs)
     modele = charger_modele(chemin).to(APPAREIL)
     res = {p: evaluer(modele, charger(o.donnees, p)) for p in ("val", "test")}
+    res["sans_panneau_par_image"] = fausses_detections(modele, charger_negatifs(o.negatifs, "eval"))
     SORTIE.mkdir(exist_ok=True)
     (SORTIE / "detector_report.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(res, ensure_ascii=False, indent=1))

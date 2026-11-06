@@ -122,10 +122,10 @@ def test_entrainement_eclair_et_reprise(tmp_path, monkeypatch):
 
     monkeypatch.setattr(td.torch, "save", save_puis_arret)
     with pytest.raises(KeyboardInterrupt):
-        td.entrainer(None, epochs=6, lot=2)
+        td.entrainer(None, epochs=6, lot=2, negatifs=None)
     assert (tmp_path / "sortie" / "detector_reprise.pt").is_file()
     monkeypatch.setattr(td.torch, "save", vrai_save)
-    chemin = td.entrainer(None, epochs=6, lot=2)
+    chemin = td.entrainer(None, epochs=6, lot=2, negatifs=None)
     ck = torch.load(chemin, weights_only=True)
     assert [h["epoch"] for h in ck["historique"]] == [1, 2, 3, 4, 5, 6]
     assert not (tmp_path / "sortie" / "detector_reprise.pt").exists()

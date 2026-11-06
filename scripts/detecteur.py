@@ -116,7 +116,11 @@ def analyser(t, modele=None, seuil_k=anomalies.SEUIL_K):
         z = decouper(t, m)
         m.update(anomalies.decrire(z, seuil_k))
         m["t_moyenne"] = round(float(np.mean(z)), 2)
+        m["t_max"] = round(float(np.max(z)), 2)
         moyennes.append(m["t_moyenne"])
+    for i, m in enumerate(mods):                          # écart de la moyenne avec les autres modules de la photo
+        autres = np.delete(np.asarray(moyennes), i)
+        m["dT_voisins"] = round(float(m["t_moyenne"] - np.median(autres)), 2) if len(autres) >= 2 else None
     for i in anomalies.modules_chauds(moyennes, seuil_k):
         if mods[i]["forme"] == "sain":
             mods[i].update(forme="module_chaud", libelle=anomalies.FORMES["module_chaud"])

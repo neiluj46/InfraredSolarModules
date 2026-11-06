@@ -222,14 +222,35 @@ Ultralytics YOLO écarté : AGPL, licence payante revendiquée même en usage in
 - **Entraînement sur DELLODM** (RTX 2080, Docker `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`, 12 Go) :
   `scripts/entrainer_dellodm.sh [epochs|suivre|rapatrier]`, 6 s par époque (160 s sur AEX), 60 époques ≈ 7 min.
   Poids : `models/detector.pt` (8,6 Mo, non versionné : `models/` est ignoré), sur AEX et DELLODM.
-- Résultats (test, 35 images, 2 363 modules, IoU ≥ 0,5) : précision 94,8 %, rappel 85,5 %, F1 0,90 ;
-  **modules entiers : 98,1 % trouvés** ; 90 % des manqués et 75 % des faux positifs sont des modules coupés par
+- **Images sans panneau** (exemples du SDK DJI en températures, `~/donnees_externes/negatifs_dji/`, 31 pour
+  l'entraînement ×3, 23 pour l'évaluation ; licence DJI, hors dépôt) : sans elles, le détecteur voyait des
+  « modules » partout sur un toit ou une ville (≈ 31 par image : climatiseurs, bords de toit) ; avec elles,
+  0,22 par image jamais vue (max 4). Le filtre de cohérence (voisins alignés, même taille) n'en retirait
+  qu'un tiers et coûtait 3 points de rappel : abandonné. Modèle gardé : dernière époque (le meilleur F1
+  gardait un modèle du début, à 9 fausses détections par image sans panneau).
+- Résultats (test, 35 images, 2 363 modules, IoU ≥ 0,5) : précision 95,2 %, rappel 84,9 %, F1 0,90 ;
+  **modules entiers : 98,4 % trouvés** (98,8 % avec un point chaud collé) ; 90 % des manqués et 75 % des faux positifs sont des modules coupés par
   le bord de l'image, écartés de l'analyse (`complet`). Erreur médiane du centre : 2 px.
-  Point chaud collé sur un module sur trois des images de test : 99 % des modules toujours trouvés.
 - `detecteur.analyser(t)` : matrice de températures → modules entiers, forme de l'anomalie, module chaud.
   Test de bout en bout sur une image Zenodo en pseudo-températures (`tests/test_detecteur.py`).
 - Limites : une seule centrale d'entraînement (modules en paysage, deux rangées par table) ; JPEG convertis,
   pas de R-JPEG : à vérifier sur tes vols. Seuil de score 0,3 (0,4 : précision 96,6 %, rappel 84 %).
+
+### Étape 5 — export vers OrthoStudio (06/11/2026, `scripts/export_orthostudio.py`)
+`R-JPEG → températures → modules (detecteur.analyser) → coins projetés au sol → fusion des vues →
+output/orthostudio_report.geojson` (WGS 84 ; propriétés `forme`, `libelle`, `anomalie`, `confirmee`, `T_max`,
+`T_mean`, `dT`, `dT_voisins`, `photo`, `vues`, `vues_anomalie`, `largeur_m`, `focale` ; `metadata.photos` :
+journal par photo avec ses alertes). Par défaut seuls les modules en anomalie (`--tous` : tous).
+- Projection : sténopé sans distorsion, `rotation_dji` reprise d'OrthoStudio (test d'égalité avec
+  `georef/camera.py`), sol plan à `RelativeAltitude − --hauteur-modules` sous la caméra.
+- Focale : DFOV officiel DJI (M3T / M3TD / M30T 61°, M4T 45°, H30T 45,2°), sinon focale équivalente 35 mm
+  rapportée à la diagonale (juste pour les caméras « 52 mm », 57° au lieu de 61° pour les « 40 mm »).
+- Fusion : même module si centres à moins d'une demi-largeur ; vue la plus centrale gardée ; anomalie vue sur
+  une seule des photos où le module apparaît → `confirmee: false` (reflet possible).
+- Tests : `tests/test_export_orthostudio.py` (orientation, échelle, oblique, WGS 84, fusion, GeoJSON, chaîne
+  complète sur les exemples DJI). **Non vérifié sur un vrai vol** : les exemples DJI n'ont ni XMP (nacelle,
+  hauteur) ni panneaux ; sans RTK, 1 à 3 m d'erreur (plus que la largeur d'un module) : calage sur
+  l'orthophoto d'OrthoStudio et import dans OrthoStudio restent à faire.
 
 ## À faire
 
@@ -244,7 +265,8 @@ Ultralytics YOLO écarté : AGPL, licence payante revendiquée même en usage in
 3. ✅ Détecteur de modules maison (ci-dessus). Reste : essai sur de vrais R-JPEG.
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
-5. `scripts/export_orthostudio.py` : projection des boîtes (sol plan, pose de la nacelle ; voir aussi
+5. ✅ `scripts/export_orthostudio.py` (ci-dessus). Reste : vrai vol, calage sur l'orthophoto, import OrthoStudio.
+   Ancienne note : projection des boîtes (sol plan, pose de la nacelle ; voir aussi
    `georef/` d'OrthoStudio : `rotation_dji`, `footprint`, conventions de cap par modèle) →
    `output/orthostudio_report.geojson`.
 
@@ -257,7 +279,7 @@ dji_sdk/src/         dji_irp.c, dirp_api_min.h (versionnés)
 dji_sdk/lib|bin|samples/   installés par scripts/install_dji_sdk.sh
 models/classifier.pt classifieur des modules
 output/              rapports, GeoJSON
-scripts/             install_dji_sdk.sh, extract_data.py, anomalies.py, detecteur.py, train_detector.py,
+scripts/             install_dji_sdk.sh, extract_data.py, anomalies.py, detecteur.py, train_detector.py, export_orthostudio.py,
                      entrainer_dellodm.sh, train_classifier.py, valider_dtu.py
 tests/               pytest (sautés sans SDK installé)
 ```
