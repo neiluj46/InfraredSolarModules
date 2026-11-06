@@ -1,0 +1,122 @@
+"""Validation du classifieur (models/classifier.pt) sur le jeu DTU (« DTU PV plant - Drone Infrared Thermography
+Dataset: Influence of Irradiance and Altitude », doi 10.11583/DTU.29665346.v1, CC BY 4.0).
+
+    .venv/bin/python scripts/valider_dtu.py ~/donnees_externes/dtu_irt_pv/extrait/"IRT DATASET"
+
+Le jeu : 43 modules aux défauts connus (EL, courbes I-V), photographiés au Mavic 3T à 8, 10, 14, 20 m et sous
+200 à > 800 W/m² ; chaque image est un module redressé en températures (.raw float32, 605 × 363, portrait).
+Pas de module sain : on ne mesure que la détection et la classe, pas les fausses alertes.
+
+Chaque image est ramenée à 40 × 24 (moyenne par blocs, comme une vignette vue de haut) puis standardisée
+comme à l'entraînement. Écrit output/validation_dtu.md et output/validation_dtu.json (non versionnés).
+"""
+from __future__ import annotations
+
+import json
+import re
+import sys
+from collections import Counter, defaultdict
+from pathlib import Path
+
+import numpy as np
+import torch
+from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from train_classifier import (CLASSES, HAUTEUR, LARGEUR, MODELES, SORTIE, ReseauModule,  # noqa: E402
+                              probas, regrouper, standardiser)
+
+FORME = (605, 363)
+# dossier DTU → (libellé, classe attendue du projet, visible en IR d'après DTU / IEA PVPS 2025)
+ATTENDU = {
+    "01_Cell Cracks": ("fissures de cellules", "cracking", False),
+    "02_Cell Interconnects": ("interconnexions", "hotspot", True),
+    "03_PID": ("PID", None, False),
+    "04_Glass Cracks": ("verre fissuré", "cracking", False),
+    "05_Short-circuited Bypass Diode": ("diode court-circuitée", "bypass_diode", True),
+    "06_Soiling 1": ("salissures 1", "obstruction", True),
+    "07_Soiling 2": ("salissures 2", "obstruction", True),
+}
+
+
+def conditions(nom):
+    """« T10_14m_600_APV771 » → (14, '600') ; altitude ou éclairement inconnu → None."""
+    alt = re.search(r"(\d+)m", nom)
+    ecl = re.search(r"_(abv800|\d{3})(?:_|$| )", nom)
+    return (int(alt.group(1)) if alt else None, ecl.group(1) if ecl else None)
+
+
+def vignette(t):
+    """Matrice 605 × 363 → 40 × 24 par moyenne de blocs (PIL BOX, flottants)."""
+    return np.asarray(Image.fromarray(t.astype(np.float32), mode="F").resize((LARGEUR, HAUTEUR), Image.BOX))
+
+
+def charger(racine):
+    lignes = []
+    for f in sorted(Path(racine).glob("*/Module */IRT/*.raw")):
+        t = np.fromfile(f, "<f4")
+        if t.size != FORME[0] * FORME[1]:
+            continue
+        t = t.reshape(FORME)
+        defaut, module = f.parts[-4], f.parts[-3]
+        alt, ecl = conditions(f.stem)
+        lignes.append({"fichier": str(f.relative_to(racine)), "defaut": defaut, "module": module,
+                       "altitude": alt, "eclairement": ecl, "dT_p99": round(float(np.percentile(t, 99.5)
+                       - np.median(t)), 2), "t": vignette(t)})
+    return lignes
+
+
+def main(racine):
+    ck = torch.load(MODELES / "classifier.pt", weights_only=True)
+    modele = ReseauModule(len(ck["fines"]))
+    modele.load_state_dict(ck["etat"])
+    lignes = charger(racine)
+    x = torch.from_numpy(standardiser(np.stack([l.pop("t") for l in lignes]))).unsqueeze(1)
+    pf = probas(modele, x)
+    pg = regrouper(pf)
+    for l, a, b in zip(lignes, pg, pf):
+        l["classe"] = CLASSES[int(a.argmax())]
+        l["confiance"] = round(float(a.max()), 3)
+        l["classe_fine"] = ck["fines"][int(b.argmax())]
+
+    par_defaut = defaultdict(list)
+    for l in lignes:
+        par_defaut[l["defaut"]].append(l)
+    out = ["# Classifieur sur le jeu DTU (Mavic 3T, 43 modules)", "",
+           f"{len(lignes)} images. « Anomalie vue » = classe ≠ no_anomaly. ΔT = centile 99,5 − médiane du module.",
+           "", "| Défaut (DTU) | Images | Attendu | Bonne classe | Anomalie vue | ΔT médian | Classes prédites |",
+           "|---|---:|---|---:|---:|---:|---|"]
+    resume = {}
+    for d, ls in sorted(par_defaut.items()):
+        lib, cible, _ = ATTENDU.get(d, (d, None, None))
+        n = len(ls)
+        bon = sum(l["classe"] == cible for l in ls) if cible else None
+        vue = sum(l["classe"] != "no_anomaly" for l in ls)
+        dt = float(np.median([l["dT_p99"] for l in ls]))
+        top = ", ".join(f"{c} {k}" for c, k in Counter(l["classe"] for l in ls).most_common())
+        resume[d] = {"images": n, "attendu": cible, "bonne_classe": bon, "anomalie_vue": vue, "dT_median": dt}
+        out.append(f"| {lib} | {n} | {cible or '—'} | {'—' if bon is None else f'{100 * bon / n:.0f} %'} | "
+                   f"{100 * vue / n:.0f} % | {dt:.1f} K | {top} |")
+
+    def tableau(cle, titre, ordre):
+        out.extend(["", f"## Diodes et salissures selon {titre} (bonne classe)", "",
+                    "| " + titre + " | " + " | ".join(map(str, ordre)) + " |", "|---|" + "---:|" * len(ordre)])
+        for d in ("05_Short-circuited Bypass Diode", "06_Soiling 1", "07_Soiling 2"):
+            cible = ATTENDU[d][1]
+            cases = []
+            for v in ordre:
+                ls = [l for l in par_defaut.get(d, []) if l[cle] == v]
+                cases.append(f"{sum(l['classe'] == cible for l in ls)}/{len(ls)}" if ls else "—")
+            out.append(f"| {ATTENDU[d][0]} | " + " | ".join(cases) + " |")
+
+    tableau("altitude", "altitude (m)", sorted({l["altitude"] for l in lignes if l["altitude"]}))
+    tableau("eclairement", "éclairement (W/m²)", ["200", "400", "600", "800", "abv800"])
+    SORTIE.mkdir(exist_ok=True)
+    (SORTIE / "validation_dtu.md").write_text("\n".join(out) + "\n", encoding="utf-8")
+    (SORTIE / "validation_dtu.json").write_text(json.dumps({"resume": resume, "images": lignes},
+                                                           ensure_ascii=False, indent=1), encoding="utf-8")
+    print("\n".join(out))
+
+
+if __name__ == "__main__":
+    main(Path(sys.argv[1]).expanduser())

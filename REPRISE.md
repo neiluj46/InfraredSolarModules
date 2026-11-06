@@ -144,6 +144,31 @@ caler les anomalies sur l'orthophoto couleur.
 Sources : Raptor Maps (M3T, ε 0,95), Sitemark (IEC 62446-3), Buerhop / PV Tech, DTU IEA PVPS 2025,
 EPJ Photovoltaics 2025 (DTU).
 
+### Validation du classifieur sur le jeu DTU (06/11/2026, `scripts/valider_dtu.py`)
+640 images de 43 modules aux défauts connus (Mavic 3T, 8-20 m, 200 à > 800 W/m², modules redressés en
+températures). Rapport : `output/validation_dtu.md` (non versionné). Aucun module sain dans le jeu.
+
+| Défaut | Images | Bonne classe | Anomalie vue (IA) | ΔT médian | ΔT > 3 K |
+|---|---:|---:|---:|---:|---:|
+| fissures de cellules | 128 | 0 % | 68 % | 0,9 K | 0 % |
+| interconnexions | 128 | 39 % (hotspot) | 86 % | 1,3 K | 0 % |
+| PID | 96 | — | 80 % | 1,1 K | 3 % |
+| verre fissuré | 32 | 0 % | 84 % | 1,6 K | 3 % |
+| diode court-circuitée | 112 | 0 % | 100 % | 24,5 K | 93 % |
+| salissures (2 séries) | 144 | 44 % | 94 % | 3,2-6,1 K | 50 % |
+
+Constats :
+- **Fausses alertes sur des modules uniformes** : la standardisation par vignette amplifie le bruit d'un
+  module à 1 K d'écart jusqu'à en faire un « défaut » (confiance médiane 0,44). Correctif prévu à l'étape 4 :
+  **seuil physique ΔT ≥ 3 K avant le classifieur** (à valider sur de vrais vols) ; fissures / PID / verre
+  restent alors « non visibles en IR », ce qui est la réponse honnête.
+- **Diode court-circuitée vue (93 % > 3 K) mais mal classée** : sa signature DTU est un point chaud sur la
+  boîte de jonction, pas le tiers de module chaud de la classe « Diode » de Raptor Maps. Règle ou données
+  d'entraînement à prévoir.
+- Salissures : invisibles à 200 W/m² (ΔT 2 K), visibles au-delà de 600 W/m² (5-16 K) : conditions IEC.
+- Le jeu DTU ne sert qu'au test (trop petit pour l'entraînement, une seule centrale) ; le détecteur de
+  modules n'est pas testé (images déjà découpées).
+
 ## À faire
 
 1. ✅ `dji_irp` validé sur les 10 modèles d'exemple (SDK officiel v1.9), en-tête vérifié (ci-dessus).
@@ -153,6 +178,7 @@ EPJ Photovoltaics 2025 (DTU).
    **Reste** : tester GPS / altitudes / nacelle sur de vraies photos (pas encore de données) ; essai de
    distance sur le terrain. Jeu DTU (CC BY 4.0, 643 Mo) téléchargé hors dépôt dans
    `~/donnees_externes/dtu_irt_pv/` pour valider le classifieur (images .raw sans métadonnées).
+   ✅ Classifieur validé sur DTU (ci-dessus) : à n'utiliser qu'après le seuil ΔT ≥ 3 K.
 3. Détecteur de modules (Ultralytics YOLO, jeu Zenodo 16420123), puis `scripts/train_thermal.py`.
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
@@ -169,6 +195,6 @@ dji_sdk/src/         dji_irp.c, dirp_api_min.h (versionnés)
 dji_sdk/lib|bin|samples/   installés par scripts/install_dji_sdk.sh
 models/classifier.pt classifieur des modules
 output/              rapports, GeoJSON
-scripts/             install_dji_sdk.sh, extract_data.py, train_classifier.py
+scripts/             install_dji_sdk.sh, extract_data.py, train_classifier.py, valider_dtu.py
 tests/               pytest (sautés sans SDK installé)
 ```
