@@ -58,3 +58,35 @@ def test_vignette_paysage_et_vide(modele):
     assert an.vignette(module(forme=(72, 120))).shape == (an.HAUTEUR, an.LARGEUR)
     assert an.vignette(module()).shape == (an.HAUTEUR, an.LARGEUR)
     assert an.classer([], modele) == []
+
+
+# ------------------------------------------------------------------ forme (option A)
+
+def test_formes_synthetiques():
+    assert an.decrire(module())["forme"] == "sain"
+    assert an.decrire(module(chaud=10))["forme"] == "point_chaud"
+    t = module()
+    t[:, 48:] += 6                                                    # tiers droit entier chaud
+    assert an.decrire(t)["forme"] == "sous_chaine_chaude"
+    t = module()
+    for y, x in ((10, 0), (60, 12), (90, 0)):                         # trois cellules, même tiers
+        t[y:y + 12, x:x + 12] += 10
+    r = an.decrire(t)
+    assert r["forme"] == "diode_possible" and max(r["tiers"]) >= 0.9 and r["zones"] == 3
+    t = module()
+    for y, x in ((10, 0), (60, 60), (90, 30)):                        # trois cellules, trois tiers
+        t[y:y + 12, x:x + 12] += 10
+    assert an.decrire(t)["forme"] == "cellules_chaudes"
+
+
+def test_forme_paysage():
+    t = module()
+    t[:, 48:] += 6
+    assert an.decrire(np.rot90(t))["forme"] == "sous_chaine_chaude"
+
+
+def test_modules_chauds():
+    assert an.modules_chauds([30, 30.5, 36, 29.8]) == [2]
+    assert an.modules_chauds([30, 30.5, 31, 29.8]) == []
+    assert an.modules_chauds([30, 40]) == []                          # trop peu de voisins
+    assert set(an.FORMES) >= {"sain", "point_chaud", "diode_possible", "module_chaud"}

@@ -21,7 +21,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from anomalies import SEUIL_K, charger_modele, classer  # noqa: E402
+from anomalies import FORMES, SEUIL_K, charger_modele, classer, decrire  # noqa: E402
 from train_classifier import SORTIE  # noqa: E402
 
 FORME = (605, 363)
@@ -63,7 +63,9 @@ def main(racine):
     modele = charger_modele()
     lignes = []
     for l in charger(racine):          # par module, pour ne pas garder 640 matrices pleines en mémoire
-        r = classer([l.pop("t")], modele)[0]
+        t = l.pop("t")
+        l["forme"] = decrire(t)["forme"]
+        r = classer([t], modele)[0]
         l.update(classe=r["classe"], confiance=r["confiance"], classe_ia=r["classe_ia"],
                  classe_fine=r["classe_fine"], ecart_K=r["ecart_K"])
         lignes.append(l)
@@ -101,6 +103,13 @@ def main(racine):
                 cases.append(f"{sum(l['classe'] == cible for l in ls)}/{len(ls)}" if ls else "—")
             out.append(f"| {ATTENDU[d][0]} | " + " | ".join(cases) + " |")
 
+    formes = [f for f in FORMES if f != "module_chaud"]
+    out.extend(["", "## Forme de l'anomalie (`decrire`, option A : forme et non cause)", "",
+                "| Défaut (DTU) | " + " | ".join(formes) + " |", "|---|" + "---:|" * len(formes)])
+    for d, ls in sorted(par_defaut.items()):
+        c = Counter(l["forme"] for l in ls)
+        out.append(f"| {ATTENDU.get(d, (d,))[0]} | " + " | ".join(f"{100 * c[f] / len(ls):.0f} %" for f in formes) + " |")
+        resume[d]["formes"] = dict(c)
     tableau("altitude", "altitude (m)", sorted({l["altitude"] for l in lignes if l["altitude"]}))
     tableau("eclairement", "éclairement (W/m²)", ["200", "400", "600", "800", "abv800"])
     SORTIE.mkdir(exist_ok=True)

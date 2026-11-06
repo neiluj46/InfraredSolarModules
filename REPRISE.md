@@ -188,6 +188,26 @@ Les salissures non signalées sont surtout les images à 200 W/m² (hors conditi
 diodes et des salissures (même signature : cellules chaudes) ; module entier chaud (`offline_module`) contre les voisins.
 Tests : `tests/test_anomalies.py` (5).
 
+
+**Forme plutôt que cause (option A, décidée le 06/11/2026, `anomalies.decrire`)** : sain (écart < 3 K),
+point chaud (une zone ≤ 2,5 % du module), cellules chaudes multiples, **diode possible** (≥ 90 % de l'aire
+chaude dans un tiers de la largeur = une sous-chaîne), **sous-chaîne chaude** (≥ 60 % d'un tiers au-dessus des
+deux autres + 3 K = diode activée) ; `modules_chauds` : moyenne ≥ médiane des voisins + 3 K (hors service, non
+validé : pas de voisins dans DTU). Cause à confirmer : photo couleur, test de diode, courbe I-V.
+
+| DTU | sain | point chaud | cellules chaudes | diode possible | sous-chaîne |
+|---|---:|---:|---:|---:|---:|
+| fissures, interconnexions, PID, verre | 97-100 % | 0-3 % | 0 % | 0 % | 0 % |
+| diode court-circuitée | 7 % | 9 % | 39 % | **45 %** | 0 % |
+| salissures 1 / 2 | 50 % | 18 / 0 % | 19 / 44 % | 12 / 6 % | 0 % |
+
+Contrôle géométrique sur Raptor Maps (vignettes 8 bits, sans températures : cadre de 3 px rogné, écart ramené
+à 10) : « Diode » → sous-chaîne chaude 83 % (Diode-Multi 81 %). Mais une cellule seule (« Cell ») n'y sort en
+point chaud que dans 5 % des cas : à 24 × 40 px, une cellule et son halo dépassent 2,5 % du module. Le
+décompte des cellules dépend de la résolution (≈ 3 cm/px conseillé) ; seuils non réglés sur ces données.
+Hypothèse : trois sous-chaînes dans la largeur en portrait (modules 60 / 72 / 120 / 144 cellules), à vérifier
+sur les centrales. Le module doit être découpé sans le fond autour (le détecteur devra rogner).
+
 ## À faire
 
 1. ✅ `dji_irp` validé sur les 10 modèles d'exemple (SDK officiel v1.9), en-tête vérifié (ci-dessus).
@@ -197,7 +217,7 @@ Tests : `tests/test_anomalies.py` (5).
    **Reste** : tester GPS / altitudes / nacelle sur de vraies photos (pas encore de données) ; essai de
    distance sur le terrain. Jeu DTU (CC BY 4.0, 643 Mo) téléchargé hors dépôt dans
    `~/donnees_externes/dtu_irt_pv/` pour valider le classifieur (images .raw sans métadonnées).
-   ✅ Classifieur validé sur DTU, seuil ΔT ≥ 3 K en place (`scripts/anomalies.py`).
+   ✅ Classifieur validé sur DTU, seuil ΔT ≥ 3 K, rapport par forme (`scripts/anomalies.py`).
 3. Détecteur de modules (Ultralytics YOLO, jeu Zenodo 16420123), puis `scripts/train_thermal.py`.
 4. `scripts/analyze_anomalies.py` : T_max, T_mean, ΔT par boîte sur la matrice ; règle module hors
    service / chaîne.
