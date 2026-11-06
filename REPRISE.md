@@ -162,9 +162,11 @@ Constats :
   module à 1 K d'écart jusqu'à en faire un « défaut » (confiance médiane 0,44). Correctif prévu à l'étape 4 :
   **seuil physique ΔT ≥ 3 K avant le classifieur** (à valider sur de vrais vols) ; fissures / PID / verre
   restent alors « non visibles en IR », ce qui est la réponse honnête.
-- **Diode court-circuitée vue (93 % > 3 K) mais mal classée** : sa signature DTU est un point chaud sur la
-  boîte de jonction, pas le tiers de module chaud de la classe « Diode » de Raptor Maps. Règle ou données
-  d'entraînement à prévoir.
+- **Diode court-circuitée vue (93 % > 3 K) mais mal classée** (corrigé le 06/11 après examen des images :
+  ce n'est pas la boîte de jonction) : la signature DTU est **plusieurs cellules chaudes**, confinées dans un
+  tiers de la largeur (une sous-chaîne) sur 4 modules sur 7, sur deux tiers pour les 3 autres. Les salissures
+  donnent aussi des cellules chaudes (jusqu'à 53 K), confinées dans un tiers sur 1 module sur 7 : la cause ne se
+  distingue pas en infrarouge seul sur ces données (photo couleur, test des diodes ou courbe I-V).
 - Salissures : invisibles à 200 W/m² (ΔT 2 K), visibles au-delà de 600 W/m² (5-16 K) : conditions IEC.
 - Le jeu DTU ne sert qu'au test (trop petit pour l'entraînement, une seule centrale) ; le détecteur de
   modules n'est pas testé (images déjà découpées).
@@ -183,7 +185,7 @@ Constats :
 | salissures (2 séries) | 94 % | 50 % | 15 % |
 
 Les salissures non signalées sont surtout les images à 200 W/m² (hors conditions IEC). Reste : classe des
-diodes (boîte de jonction) et des salissures ; module entier chaud (`offline_module`) contre les voisins.
+diodes et des salissures (même signature : cellules chaudes) ; module entier chaud (`offline_module`) contre les voisins.
 Tests : `tests/test_anomalies.py` (5).
 
 ## À faire
