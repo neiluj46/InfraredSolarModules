@@ -15,7 +15,7 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
   accord explicite (fusions comprises).
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + D.1 à D.6, NON fusionnée),
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + D.1 à D.7, NON fusionnée),
   instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
   ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ; journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV).
@@ -37,13 +37,12 @@ Fait le 07/11/2026 — détection automatique des volumes (PRIORITÉ N° 1), bra
 - Projet 5 de 8001 : détection D.3 injectée (calcul 1 de volumes_auto) ; mesures 16 à 21 créées par les essais.
 - Chaque étape relue par un agent (sans droit d'écriture) avant commit : continuer ainsi.
 
-PROCHAINE ÉTAPE : D.7 (feu vert déjà donné le 07/11, « on enchaîne sur le D7 ») — rapport et export QGIS :
-contours retenus (mesures créées par la détection, propositions à exclure ou non) et volumes dans la section
-Volumes du rapport (report_volumes.py) et dans l'export QGIS (export_qgis.py : couches des propositions et des
-contours validés). Regarder d'abord ce que font déjà report_volumes.py et export_qgis.py pour les calculs Volumes
-et Lac ; poser les questions métier utiles (faut-il les propositions non validées ? les objets exclus ?) avant de
-coder si ce n'est pas évident ; puis tests, essai dans 8001 (projet 5), relecture par un agent, docs, commit.
-Ensuite, à me proposer : fusion de la branche d'essai dans main (mon accord), puis les autres priorités.
+- D.7 faite le 07/11 (commit cdc78f7) : rapport (colonne « Contour » auto / à la main, blocs « Détection
+  automatique » et « Objets validés », origine dans le Lac) et export QGIS (couche de toutes les propositions,
+  objets à exclure décochés, champs d'origine). Détection automatique TERMINÉE (D.1 à D.7).
+
+PROCHAINE ÉTAPE : me proposer la fusion de la branche d'essai dans main (mon accord explicite), puis les autres
+priorités ci-dessous.
 
 Autres priorités (après la détection, attendre mon feu vert) :
 2. Vue 3D de l'export QGIS « vraiment horrible » (l'import marche) : me demander les détails, puis corriger.
