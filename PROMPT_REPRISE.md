@@ -54,9 +54,9 @@ Autres priorités (attendre mon feu vert) :
 5. En attente du drone thermique ou d'une base de R-JPEG : vrai vol thermique, SDK DJI sur DELLODM.
 
 À faire par moi :
-- Services de DELLODM à réinstaller (empreinte du code changée, code_identique: false) : pousser main vers
-  DELLODM (git push odm@192.168.1.125:OrthoStudio main), puis là-bas « cd ~/OrthoStudio && sudo bash
-  scripts/installer_calcul_distant.sh » et « … --gpu ». D'ici là, calculs « sur DELLODM » refusés → « Ce PC ».
+- (Fait le 07/11 au soir : DELLODM sur ff0c96e, services réinstallés, code_identique: true. Piège : pousser vers
+  DELLODM sur une branche à part — git push odm@192.168.1.125:OrthoStudio main:refs/heads/maj — puis là-bas
+  git merge --ff-only maj ; un push direct sur main, branche en cours d'utilisation, est refusé.)
 - Production (8000) : à relancer (arrêtée par le redémarrage du PC), puis jeton dans Réglages → « Service de calcul
   des onglets ».
 - Câble Ethernet d'AEX sans lien depuis le 07/11 midi (Wi‑Fi en attendant).
