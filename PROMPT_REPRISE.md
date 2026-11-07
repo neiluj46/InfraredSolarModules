@@ -24,30 +24,37 @@ Commence par lire ~/InfraredSolarModules/REPRISE.md (état détaillé, résultat
 et ~/OrthoStudio_test/docs/reprise_session_2026-11-06.md, puis git log -8 des deux dépôts. Ne refais pas ce qui
 est fait.
 
-État au 06/11/2026 au soir (tout est poussé) :
+État au 07/11/2026 (tout est poussé ; 576 tests OrthoStudio réussis) :
 - Chaîne thermique complète écrite et testée, mais JAMAIS essayée sur un vrai vol (pas encore de R-JPEG au-dessus
-  de panneaux) : R-JPEG DJI → températures (scripts/extract_data.py) → modules détectés (détecteur maison PyTorch)
-  → forme de l'anomalie (anomalies.py, seuil ΔT ≥ 3 K) → polygones au sol (export_orthostudio.py, option --tous
-  pour garder les modules sains) → import dans l'onglet Thermique d'OrthoStudio, section du rapport PDF / Excel.
-- PLAN DE CALEPINAGE (OrthoStudio, onglet Thermique), décisions prises avec moi : numérotation générée
-  [zone-]R01-T03-L2-C14 (ordre de lecture nord en haut) + import client plus tard ; module + table (chaîne /
-  onduleur = champs client) ; tables saisies sur l'orthophoto couleur ; livrables PDF + identifiant dans le
-  tableau, CSV / Excel, GeoJSON / DXF.
-  ✅ C.1 orthostudio/calepinage.py (grille, rangées, numérotation, répéter) ;
-  ✅ C.2 API + écran static/js/calepinage.js (saisie 3 clics, répéter, retirer des modules, inversions) ;
-  ✅ C.3 orthostudio/calepinage_recalage.py (recalage Hough + Kabsch des modules thermiques sur le plan,
-     sûr / ambigu / hors plan, décalage manuel) + bloc « Rattacher les anomalies au plan ».
-  Seuils d'ambiguïté prudents, réglés sur synthèse seulement.
-- Démo FICTIVE dans le projet 4 de l'instance 8001 (rapport PV + plan d'une table 3 × 12 décalé de 1,5 / −1,2 m).
-- Calculs lourds sur DELLODM (192.168.1.125, RTX 2080, Docker) : scripts/entrainer_dellodm.sh.
+  de panneaux) : R-JPEG DJI → températures (scripts/extract_data.py) → modules détectés (détecteur maison PyTorch,
+  F1 0,90) → forme de l'anomalie (anomalies.py, seuil ΔT ≥ 3 K) → polygones au sol (export_orthostudio.py ; option
+  --tous pour garder les modules sains, nécessaire au recalage) → import dans l'onglet Thermique d'OrthoStudio.
+- PLAN DE CALEPINAGE terminé (OrthoStudio, onglet Thermique, détail : docs/calepinage_proposition.md) :
+  ✅ C.1 calepinage.py : tables (3 clics + lignes × colonnes), rangées, numérotation [zone-]R01-T03-L2-C14 ;
+  ✅ C.2 API + écran calepinage.js : saisie, répéter, retirer des modules, inversions ;
+  ✅ C.3 calepinage_recalage.py : recalage Hough + Kabsch des modules thermiques sur le plan, sûr / ambigu /
+     hors plan, décalage manuel ;
+  ✅ C.4 livrables : colonne « Module » + statut dans le rapport PDF / Excel (a), planche du plan dans le
+     rapport : vue d'ensemble + zooms par rangée, positions recalées (b), exports GeoJSON WGS 84 / DXF R12
+     Lambert 93 du plan et CSV / Excel des anomalies (c) — calepinage_export.py ;
+  ✅ C.5 calepinage_client.py : import CSV identifiant;id_client;chaine;onduleur + modèle à remplir ; dans le
+     rapport, « Module » garde l'identifiant généré et « Réf. client » / « Chaîne / onduleur » s'ajoutent (décision
+     validée le 07/11).
+- Démo FICTIVE dans le projet 4 (« fd 50m ») de l'instance 8001 : rapport PV, plan d'une table 3 × 12 décalé de
+  1,5 / −1,2 m (recalage « ambigu », attendu), références client FICTIF-001… importées.
 
-Calepinage C.4 LIVRABLES fait le 07/11 (docs/calepinage_proposition.md) : C.4a colonne « Module » + statut dans la
-section « Anomalies PV » du rapport et l'Excel ; C.4b planche du plan dans le rapport (vue d'ensemble + zooms par
-rangée) ; C.4c exports GeoJSON / DXF Lambert 93 du plan et CSV / Excel des anomalies (onglet Thermique).
-C.5 ✅ (07/11) import CSV du client (identifiant;id_client;chaine;onduleur) : calepinage terminé.
-Points ouverts : essai sur un vrai vol (photos à déposer dans
-~/InfraredSolarModules/data/raw_rjpegs/, exporter avec --tous) pour régler les seuils du recalage ; essai de
-distance sur cible ; les tables ne se déplacent pas, pas d'annulation dans l'écran de saisie.
+Points ouverts (aucune tâche imposée : attendre mes consignes) :
+1. Essai sur un vrai vol : R-JPEG dans ~/InfraredSolarModules/data/raw_rjpegs/, export avec --tous, puis
+   régler les seuils du recalage (ECART_MIN = 5 modules, 1 %, MARGE_BORD 20 %) — réglés sur synthèse seulement.
+2. Essai de distance sur cible (températures) ; DXF à ouvrir dans AutoCAD / Covadis (relu par GDAL seulement).
+3. Limites connues : tables non déplaçables, pas d'annulation dans la saisie ; rattachement à relancer à la main
+   si le plan change (alerte dans le rapport) ; références client attachées à l'identifiant généré (changer la
+   numérotation les déplace) ; zooms de la planche limités à 12 ; pas de planche du plan seul ; import DXF du
+   plan client non fait.
+4. Un test instable hors calepinage dans la suite OrthoStudio (1 échec isolé le 07/11, réussi à la relance, non
+   identifié).
+- Calculs lourds sur DELLODM (192.168.1.125, RTX 2080, Docker) : scripts/entrainer_dellodm.sh. Le 07/11 j'en avais
+  besoin pour autre chose : demander avant tout calcul dessus.
 
 Règles :
 - Arrêt et rapport court à la fin de chaque point, puis attendre mon feu vert.
@@ -56,8 +63,8 @@ Règles :
   La clé d'AEX a une phrase secrète : si l'agent SSH est vide (ssh-add -l), demande-moi de lancer ssh-add.
 - Jamais de binaire, de photo DJI ni de données tierces dans un dépôt (données dans ~/donnees_externes/,
   data/ non versionné). Demander avant de télécharger un jeu ou un modèle .pt tiers.
-- Mettre à jour REPRISE.md, CLAUDE.md, docs/calepinage_proposition.md et docs/reprise_*.md à chaque étape. Commits en français, push
-  régulier : git -c 'credential.helper=!/home/aex/.local/bin/gh auth git-credential' push
+- Mettre à jour REPRISE.md, CLAUDE.md, docs/calepinage_proposition.md et docs/reprise_*.md à chaque
+  étape. Commits en français, push régulier : git -c 'credential.helper=!/home/aex/.local/bin/gh auth git-credential' push
 - Agents (sous-tâches) autorisés si utile.
 - Instance 8001 : ne pas l'arrêter avec pkill -f "orthostudio --port 8001" (le motif tue aussi le shell de
   l'agent) ; viser le PID, relancer avec setsid nohup, recharger la page (location.reload) après un changement JS.
