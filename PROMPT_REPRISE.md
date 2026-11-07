@@ -37,6 +37,12 @@ Fait le 07/11/2026 :
   code identique exigée (sinon calculs refusés).
 - Réseau : câble Ethernet AEX ↔ DELLODM (switch Netgear) = 941 Mbit/s quand il est branché ; Wi‑Fi ≈ 70 Mbit/s.
 
+À faire par moi au 07/11 soir (vérifier au début : empreintes identiques, jeton) :
+- DELLODM : « cd ~/OrthoStudio && sudo bash scripts/installer_calcul_distant.sh » (service des onglets 3100 encore
+  au code d'avant la fusion ; le service GPU 3101 est déjà à jour, empreinte a144670e391e8373).
+- Production : jeton à saisir dans Réglages → « Service de calcul des onglets » (8001 l'a déjà).
+- Câble Ethernet d'AEX sans lien depuis midi le 07/11 (Wi‑Fi en attendant).
+
 Prochaine étape (attendre mon feu vert) :
 1. PRIORITÉ N° 1 : détection automatique des volumes (tas / fosses des cubages de carrière, Lac), à côté des
    onglets Volumes et Lac. Poser d'abord les questions métier, puis proposer un plan par étapes.
