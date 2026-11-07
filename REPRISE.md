@@ -257,6 +257,10 @@ journal par photo avec ses alertes). Par défaut seuls les modules en anomalie (
 
 ## À faire
 
+> **En attente (décision du 07/11/2026)** : le vrai vol thermique (réglage du recalage du calepinage, GPS / nacelle
+> sur de vraies photos) et le SDK DJI sur DELLODM (calcul thermique distant) attendent le **drone thermique de
+> l'utilisateur (dans plusieurs semaines)** ou une base de données de R-JPEG récupérée d'ici là. Rien à faire avant.
+
 1. ✅ `dji_irp` validé sur les 10 modèles d'exemple (SDK officiel v1.9), en-tête vérifié (ci-dessus).
 2. ✅ Étape 2 `scripts/extract_data.py` (06/11) : `dji_irp -a measure` → matrice float32 ; EXIF / XMP /
    MakerNote (lat, lon, altitudes, nacelle, attitude du drone) → `data/processed/metadata_db.json` ; JPEG
