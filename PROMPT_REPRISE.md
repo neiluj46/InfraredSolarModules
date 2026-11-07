@@ -42,8 +42,8 @@ est fait.
 - Calculs lourds sur DELLODM (192.168.1.125, RTX 2080, Docker) : scripts/entrainer_dellodm.sh.
 
 Prochaine tâche : calepinage C.4, LIVRABLES (docs/calepinage_proposition.md). C.4a ✅ (07/11) : colonne « Module »
-(+ statut) dans la section « Anomalies PV » du rapport et l'Excel. Reste C.4b planche PDF du plan (vue d'ensemble +
-zooms par rangée, modules en anomalie colorés, positions recalées) puis C.4c exports CSV / Excel des
+(+ statut) dans la section « Anomalies PV » du rapport et l'Excel. C.4b ✅ (07/11) planche du plan dans le rapport
+(vue d'ensemble + zooms par rangée). Reste C.4c exports CSV / Excel des
 anomalies avec identifiant, GeoJSON (WGS 84) et DXF 2D (Lambert 93) du plan. Puis C.5 : import CSV du client
 (identifiant;id_client;chaine;onduleur). Autres points ouverts : essai sur un vrai vol (photos à déposer dans
 ~/InfraredSolarModules/data/raw_rjpegs/, exporter avec --tous) pour régler les seuils du recalage ; essai de
