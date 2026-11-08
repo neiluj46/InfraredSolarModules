@@ -254,6 +254,8 @@ journal par photo avec ses alertes). Par défaut seuls les modules en anomalie (
 - **Import dans OrthoStudio** ✅ (06/11, branche `ccr-0037e643-x5jvxm`, f4c918c) : onglet Thermique, section
   « Anomalies PV importées » (`orthostudio/thermique_pv.py`, `static/js/thermique_pv.js`) ; section « Anomalies PV »
   du rapport PDF et feuille Excel (af00d2a).
+- **Export QGIS** ✅ (08/11, OrthoStudio Q.5, `docs/export_qgis_modules.md`) : mesures des photos, anomalies PV par
+  forme (N° du rapport PDF), calepinage (tables, modules, anomalies rattachées) dans le projet QGIS du client.
 
 ## À faire
 
