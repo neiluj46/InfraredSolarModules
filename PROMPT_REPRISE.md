@@ -15,8 +15,8 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
   accord explicite (fusions comprises).
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= main depuis la fusion du 08/11 soir,
-  dernier commit : compte rendu de la fusion), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + 1 commit du 08/11 non fusionné :
+  36ee2e0, LiDAR HD de l'IGN et orthophoto pleine résolution des mosaïques), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
   ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ; journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV).
 
@@ -60,7 +60,9 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
    Reste : DELLODM (installateur, moi : sudo, SANS --token), production (point 3).
 3. Production (8000) : à relancer par moi (./run.sh dans /home/aex/TEST ), jeton dans Réglages → « Service de
    calcul des onglets » ; réexporter vers QGIS les projets dont l'export date d'avant la fusion.
-5. Couche LiDAR HD de l'IGN (nuage COPC) dans l'export QGIS, pour comparer au nuage du drone.
+5. LiDAR HD de l'IGN : FAIT le 08/11 (36ee2e0, docs/lidar_hd_ign.md) : extrait COPC de l'emprise, vue 3D superposée
+   au drone, surcouche de tuiles sur la carte, couches dans l'export QGIS ; option « orthophoto pleine résolution »
+   de la mosaïque des photos à l'export (ma demande). À fusionner dans main (mon accord). À essayer par moi dans 8001.
 6. Tuiles 3D d'ODM (case « Modèle 3D », option 3d-tiles) : jamais vues sur un vrai traitement.
 7. Plus tard : moteur GPU (MNS / nuage dense, multi-blocs), doublon vision/jaunisse.py ; détection : couche
    d'emprise des levers du Lac dans QGIS ; option « export sans photos d'origine » si trop lourd.
@@ -70,7 +72,8 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
 Données de test sur DELLODM : ~/BD Photos (copie partielle de BASE D par moi, 08/11 ; à utiliser pour gagner du
 temps).
 
-PROCHAINE ÉTAPE : installateur DELLODM et production 8000 (moi), puis point 5 (LiDAR HD de l'IGN) après mon feu vert.
+PROCHAINE ÉTAPE : mon essai du LiDAR dans 8001, fusion de 36ee2e0 dans main (mon accord), installateur DELLODM et
+production 8000 (moi), puis point 6 (tuiles 3D d'ODM) après mon feu vert.
 Répondre en français (rappel de l'utilisateur du 08/11).
 
 Règles :
