@@ -15,8 +15,8 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
   accord explicite (fusions comprises).
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + 5 commits du 08/11 non
-  fusionnés, dernier 54bbda7), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + 6 commits du 08/11 non
+  fusionnés, dernier 448e426), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
   ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ; journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV).
 
@@ -38,7 +38,9 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   réinstallé par moi (jeton gardé).
 - Point 4 en cours, Export QGIS de tous les modules (docs/export_qgis_modules.md) : Q.1 socle (07d5503), Q.2 agro /
   biomasse / points terrain (bd1083f), Q.3 vigne, verger, dégâts (80600b7, f019574 : noms de groupes lisibles, boîte
-  d'export à jour), Q.4 jaunisses et frelons avec photos des suspects copiées et ouvertes dans QGIS (54bbda7).
+  d'export à jour), Q.4 jaunisses et frelons avec photos des suspects copiées et ouvertes dans QGIS (54bbda7),
+  Q.5 thermique, anomalies PV par forme, calepinage (tables, modules, anomalies rattachées ; alerte si plan modifié
+  après le rattachement) (448e426, essai sur fd 50m de démonstration ; suite DELLODM 641 verts).
   Mes décisions : résultats en coordonnées (jamais les algorithmes), tout ce qui est détecté (auto et main),
   jaunisses / frelons = orthophotos + points GPS + photos, thermique = ortho + défauts + calepinage, plans de vol non ;
   objectif : le client voit son projet chez lui avec QGIS (gratuit).
@@ -52,8 +54,7 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   complète sur DELLODM pas relancée depuis Q.2.
 
 TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour chaque point) :
-4. Export QGIS de tous les modules, suite : Q.5 thermique (mesures des photos, anomalies PV, calepinage : modules,
-   tables, anomalies rattachées ; collecteurs dans orthostudio/export_qgis_onglets.py), puis Q.6 photos
+4. Export QGIS de tous les modules, suite : Q.6 photos
    géoréférencées (empreintes, centres ; et la mosaïque rapide, VRT exclu : orthophoto des projets de photos
    brutes ?), tests, LISEZMOI, vérification QGIS 3.40 ; puis suite complète DELLODM.
    Ensuite : fusion de la branche dans main (mon accord), DELLODM (push + installateur), production.
@@ -66,7 +67,10 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
 8. En attente du drone thermique ou d'une base de R-JPEG : vrai vol thermique, SDK DJI sur DELLODM.
 9. Réseau : Wi‑Fi par défaut ; câble Ethernet d'AEX branché seulement pour les très gros transferts.
 
-PROCHAINE ÉTAPE : Q.5 (thermique et calepinage) après mon feu vert.
+Données de test sur DELLODM : ~/BD Photos (copie partielle de BASE D par moi, 08/11 ; à utiliser pour gagner du
+temps).
+
+PROCHAINE ÉTAPE : Q.6 (photos géoréférencées) après mon feu vert.
 
 Règles :
 - Arrêt et rapport court à la fin de chaque point, puis attendre mon feu vert.
