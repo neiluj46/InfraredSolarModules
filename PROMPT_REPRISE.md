@@ -15,8 +15,8 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
   accord explicite (fusions comprises).
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + 7 commits du 08/11 non
-  fusionnés, dernier dc61f94), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= main depuis la fusion du 08/11 soir,
+  dernier commit : compte rendu de la fusion), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
   ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ; journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV).
 
@@ -56,8 +56,8 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   complète sur DELLODM pas relancée depuis Q.2.
 
 TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour chaque point) :
-4. Export QGIS de tous les modules : terminé (Q.1 à Q.6).
-   Ensuite : fusion de la branche dans main (mon accord), DELLODM (push + installateur), production.
+4. Export QGIS de tous les modules : terminé (Q.1 à Q.6) et fusionné dans main le 08/11 (avance rapide).
+   Reste : DELLODM (installateur, moi : sudo, SANS --token), production (point 3).
 3. Production (8000) : à relancer par moi (./run.sh dans /home/aex/TEST ), jeton dans Réglages → « Service de
    calcul des onglets » ; réexporter vers QGIS les projets dont l'export date d'avant la fusion.
 5. Couche LiDAR HD de l'IGN (nuage COPC) dans l'export QGIS, pour comparer au nuage du drone.
@@ -70,7 +70,8 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
 Données de test sur DELLODM : ~/BD Photos (copie partielle de BASE D par moi, 08/11 ; à utiliser pour gagner du
 temps).
 
-PROCHAINE ÉTAPE : fusion de la branche dans main (mon accord), puis DELLODM (push + installateur) et production.
+PROCHAINE ÉTAPE : installateur DELLODM et production 8000 (moi), puis point 5 (LiDAR HD de l'IGN) après mon feu vert.
+Répondre en français (rappel de l'utilisateur du 08/11).
 
 Règles :
 - Arrêt et rapport court à la fin de chaque point, puis attendre mon feu vert.
