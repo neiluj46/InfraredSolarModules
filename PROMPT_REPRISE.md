@@ -14,14 +14,14 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
-  accord explicite (fusions comprises). main = 36ee2e0 (08/11 soir), identique à la branche d'essai.
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= main), instance 8001 (lancement :
+  accord explicite (fusions comprises). main = 7b46b81 (08/11 soir), identique à la branche d'essai.
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= main = 7b46b81), instance 8001 (lancement :
   voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ;
   journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV, ce prompt).
 
-Lis d'abord : ~/OrthoStudio_test/CLAUDE.md (encadré « Priorités et attentes » en tête), docs/lidar_hd_ign.md et
-docs/export_qgis_modules.md (derniers travaux), puis git log -8. Ne refais pas ce qui est fait.
+Lis d'abord : ~/OrthoStudio_test/CLAUDE.md (encadré « Priorités et attentes » en tête), docs/photos_dellodm.md,
+docs/lidar_hd_ign.md et docs/export_qgis_modules.md (derniers travaux), puis git log -8. Ne refais pas ce qui est fait.
 
 Au démarrage, vérifier (et me le dire en une ligne) :
 - instances : ss -ltnp | grep -E ":800[01]" ; 8001 est à relancer après chaque redémarrage du PC (commande dans
@@ -39,15 +39,18 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   Mes décisions pour l'export : résultats en coordonnées (jamais les algorithmes), tout ce qui est détecté (auto et
   main), jaunisses / frelons = orthophotos + points GPS + photos, thermique = ortho + défauts + calepinage, plans de
   vol non ; objectif : le client voit son projet chez lui avec QGIS (gratuit).
-- Tests : suite DELLODM 663 verts sur 36ee2e0 ; 13 échecs connus (pdftotext / geopandas absents du conteneur)
+- Photos de DELLODM dans l'explorateur (08/11, 7b46b81, fusionné dans main) : rubrique « Autres machines », montage
+  SSHFS lecture seule de odm@192.168.1.125:BD Photos (orthostudio/distants.py), ssh-add après chaque démarrage d'AEX ;
+  essayé sur Redon2 (179 photos). Mes essais cette semaine.
+- Tests : suite DELLODM 682 verts sur 7b46b81 (13 échecs connus rejoués verts sur AEX) ; avant : 663 verts sur 36ee2e0 ; 13 échecs connus (pdftotext / geopandas absents du conteneur)
   rejoués verts sur AEX ; 2 tests instables en -n 8 (test_biomasse_carte::test_api_parcours,
   test_detection_corrections::test_api_reglage_manuel_et_corrections).
 - Essais réels dans 8001 : 2 test2 (photos, mosaïque ; ses photos de ~/Images ont été retirées par moi le 08/11 :
   export sans photos), 3 redon et 6 Plan 3d Maison (LiDAR HD téléchargé : décalage −54,8 m « approché » à Redon,
   −18,4 m à la maison), 4 fd 50m (calepinage de démonstration, rattachement à relancer), 11 VM et 12 Bois (vigne).
   Vue 3D avec le LiDAR : pas encore essayée par moi dans le navigateur.
-- DELLODM : code_identique = false (code des services plus ancien) → installateur à relancer par moi (sudo, SANS
-  --token). Ma base de photos : ~/BD Photos sur DELLODM (53 Go, BASE D, BN FE, CLients), à utiliser pour les essais.
+- DELLODM : services réinstallés par moi le 08/11 (code_identique = true) ; à relancer après chaque fusion qui
+  touche le code des calculs (sudo, SANS --token). Ma base de photos : ~/BD Photos sur DELLODM (53 Go, BASE D, BN FE, CLients), à utiliser pour les essais.
 - Sauvegarde du 08/11 : DELLODM ~/sauvegardes/2026-11-08/ (git bundle des deux dépôts, essais.db, CLAUDE.md, ce
   prompt, mémoire de Claude).
 
@@ -64,7 +67,10 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
    DELLODM.
 9. Réseau : Wi‑Fi par défaut ; câble Ethernet d'AEX branché seulement pour les très gros transferts.
 
-PROCHAINE ÉTAPE : mes essais (point 3), puis point 6 (tuiles 3D d'ODM) après mon feu vert.
+PROCHAINE ÉTAPE : point 6 (tuiles 3D d'ODM) après mon feu vert ; mes essais (point 3 fait le 08/11 après redémarrage,
+photos de DELLODM) cette semaine. Nettoyage du 08/11 : ~/OrthoStudio_notes/nettoyage_2026-11-08.txt ; zip
+~/Desktop/OrthoStudio_installation_2026-11-08_7b46b81.zip. Chrome ne chargeait plus rien le 08/11 : réglé par un
+redémarrage du PC.
 Répondre TOUJOURS en français, même après un long travail (rappel du 08/11).
 
 Règles :
