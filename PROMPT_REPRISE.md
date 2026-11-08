@@ -15,13 +15,14 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
   accord explicite (fusions comprises).
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= main depuis la fusion du 07/11),
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= main depuis la fusion du 08/11, 79bc701),
   instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
   ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ; journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV).
 
 Lis d'abord : ~/OrthoStudio_test/CLAUDE.md (encadré « Priorités et attentes » en tête),
-~/OrthoStudio_test/docs/detection_volumes_proposition.md (plan D.1 à D.7 et comptes rendus), puis git log -8.
+~/OrthoStudio_test/docs/vue_3d_qgis.md (export QGIS 3D, 08/11) et docs/detection_volumes_proposition.md, puis
+git log -8.
 Ne refais pas ce qui est fait.
 
 Au démarrage, vérifier (et me le dire en une ligne) :
@@ -30,36 +31,38 @@ Au démarrage, vérifier (et me le dire en une ligne) :
 - DELLODM : ssh-add -l ; curl http://127.0.0.1:8001/api/calcul/test et /api/calcul/gpu/test → code_identique.
 - réseau : ip route get 192.168.1.125 (enp3s0f1 = câble, wlp2s0 = Wi‑Fi).
 
-État au 07/11/2026 au soir (tout commité et poussé) :
-- Détection automatique des volumes (ancienne PRIORITÉ N° 1) TERMINÉE et FUSIONNÉE dans main (ff0c96e, avance
-  rapide, mon accord) : D.1 paquet cubature/ ; D.2 moteur cubature/detection.py ; D.3 essai Wietrznia sur DELLODM
-  (IoU 0,90, 59 s) ; D.4 service volumes_auto_service.py + routes /api/projects/{pid}/volumes_auto… ; D.5 écran
-  static/js/volumes_auto.js dans l'onglet Volumes ; D.6 mode Lac (emprise +10 m, contour de crête) ; D.7 rapport
-  (colonne « Contour » auto / à la main, blocs « Détection automatique » et « Objets validés », origine dans le Lac)
-  et export QGIS (couche de toutes les propositions, objets à exclure décochés, champs d'origine).
-- Wietrznia (projet 5 de 8001) : fosse auto cubée 396 293 m³ (contour manuel : 366 715 m³, 8 %) ; mesures 16 à 21
-  créées par les essais.
-- Branches : main = ccr-0037e643-x5jvxm (~/OrthoStudio_test) ; M0 (~/OrthoStudio_m0) déjà fusionnée ; anciennes
-  branches locales ccr-ec42f296-1bn5ff et vols-carto3d entièrement contenues dans main.
-- Tests : suite complète verte (DELLODM + fichiers rejoués sur AEX) ; rsync vers DELLODM avec --exclude __pycache__.
+État au 08/11/2026 (tout commité et poussé) :
+- Vue 3D de l'export QGIS (ancienne priorité n° 2) TERMINÉE et FUSIONNÉE dans main (79bc701, avance rapide, mon
+  accord ; /home/aex/TEST  est à jour sur le disque) : altitudes absolues, vue « OrthoStudio 3D » écrite dans le
+  projet (VUE_3D dans orthostudio/export_qgis.py), seule l'orthophoto cochée à l'ouverture, tuiles Obj2Tiles légères
+  (-t indispensable, texture 1024 px par tuile, octree). Validé dans QGIS 3.40 sur la maison et la carrière
+  Wietrznia (fluide, maillage coché). Compte rendu : ~/OrthoStudio_test/docs/vue_3d_qgis.md.
+- Tests : 15 tests de l'export QGIS verts sur AEX (PyQGIS + Obj2Tiles) ; suite complète sur DELLODM PAS relancée
+  (clé SSH non chargée ce jour-là).
+- Détection automatique des volumes (D.1 à D.7) : faite et fusionnée le 07/11 (ff0c96e).
+- Fichiers d'essai laissés dans les exports QGIS de 8001 : maison (Essai_3D_maillage*.qgz,
+  donnees/modele_3d/tuiles_2048) ; carrière (Essai_carriere_3.qgz, donnees/modele_3d/tuiles_legeres et
+  tuiles_1024) : supprimables.
 
-PROCHAINE ÉTAPE : priorité n° 2 ci-dessous (vue 3D de l'export QGIS), après mon feu vert : me demander d'abord
-les détails (projet, nuage / MNS / maillage, relief, texture).
+TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour chaque point) :
+1. Suite complète des tests sur DELLODM sur 79bc701 (ssh-add d'abord), fichiers PyQGIS / geopandas / Obj2Tiles
+   rejoués sur AEX.
+2. DELLODM : pousser 79bc701 (git push odm@192.168.1.125:OrthoStudio main:refs/heads/maj, puis là-bas
+   git merge --ff-only maj) et réinstaller les services (empreinte du code) → code_identique: true.
+3. Production (8000) : à relancer par moi (./run.sh dans /home/aex/TEST ), puis jeton dans Réglages → « Service de
+   calcul des onglets » ; réexporter vers QGIS les projets dont l'export date d'avant le 08/11.
+4. Export QGIS de tous les modules (mon idée du 08/11) : orthophotos, indices, cartes et mesures de chaque onglet
+   (agro, biomasse, jaunisses, multispectral, thermique…), pas les scripts de détection, pour que les clients
+   visualisent leurs résultats dans QGIS. Faire d'abord l'inventaire de ce qui manque à l'export.
+5. Couche LiDAR HD de l'IGN (nuage COPC) dans l'export QGIS, pour comparer au nuage du drone (mon idée du 08/11).
+6. Tuiles 3D d'ODM (case « Modèle 3D », option 3d-tiles) : jamais vues sur un vrai traitement ; l'export les
+   reconvertit désormais en tuiles légères quand Obj2Tiles est présent.
+7. Plus tard : moteur GPU (MNS / nuage dense, multi-blocs), doublon vision/jaunisse.py, export QGIS étape 3 ;
+   détection : couche d'emprise des levers du Lac dans QGIS.
+8. En attente du drone thermique ou d'une base de R-JPEG : vrai vol thermique, SDK DJI sur DELLODM.
+9. Câble Ethernet d'AEX sans lien depuis le 07/11 midi (Wi‑Fi en attendant) : à vérifier par moi.
 
-Autres priorités (attendre mon feu vert) :
-2. Vue 3D de l'export QGIS « vraiment horrible » (l'import marche) : me demander les détails, puis corriger.
-3. Tuiles 3D d'ODM (case « Modèle 3D », option 3d-tiles) : jamais vues sur un vrai traitement.
-4. Plus tard : moteur GPU (MNS / nuage dense, multi-blocs), doublon vision/jaunisse.py, export QGIS étape 3 ;
-   détection : couche d'emprise des levers du Lac dans QGIS (origine lisible seulement dans les mesures).
-5. En attente du drone thermique ou d'une base de R-JPEG : vrai vol thermique, SDK DJI sur DELLODM.
-
-À faire par moi :
-- (Fait le 07/11 au soir : DELLODM sur ff0c96e, services réinstallés, code_identique: true. Piège : pousser vers
-  DELLODM sur une branche à part — git push odm@192.168.1.125:OrthoStudio main:refs/heads/maj — puis là-bas
-  git merge --ff-only maj ; un push direct sur main, branche en cours d'utilisation, est refusé.)
-- Production (8000) : à relancer (arrêtée par le redémarrage du PC), puis jeton dans Réglages → « Service de calcul
-  des onglets ».
-- Câble Ethernet d'AEX sans lien depuis le 07/11 midi (Wi‑Fi en attendant).
+PROCHAINE ÉTAPE : point 1 (après ssh-add), puis point 2.
 
 Règles :
 - Arrêt et rapport court à la fin de chaque point, puis attendre mon feu vert.
