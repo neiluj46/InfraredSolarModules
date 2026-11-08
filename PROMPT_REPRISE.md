@@ -59,7 +59,21 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
    Réglages → « Service de calcul des onglets ») ; réexporter vers QGIS les projets exportés avant le 08/11.
    Essayer dans 8001 : vue 3D + LiDAR HD, surcouche LiDAR de la carte, case « orthophoto pleine résolution ».
 6. Tuiles 3D d'ODM (case « Modèle 3D », option 3d-tiles) : jamais vues sur un vrai traitement (traitement NodeODM :
-   mon accord).
+   mon accord). PRÉPARÉ le 08/11 :
+   - Code déjà en place : odm_core/options.py ajoute 3d-tiles quand dsm (case « Modèle 3D ») ; nodeodm.py
+     TUILES_MEMBER = "3d_tiles/model/" (option facultative : un ODM trop ancien l'ignore) ; pipeline.py rapatrie vers
+     ortho/modele_3d_tuiles/ ; export_qgis.py ajouter_maillage() ne reprend les tuiles d'ODM QUE si Obj2Tiles manque
+     (Obj2Tiles est installé sur AEX : ~/.local/bin/Obj2Tiles, tuiles légères -t, cf. docs/vue_3d_qgis.md).
+   - DELLODM : NodeODM / ODM 3.6.2, l'option --3d-tiles existe (opendm/config.py).
+   - Jeu d'essai proposé : projet 6 « Plan 3d Maison » de 8001 (124 photos DJI, ultra + Modèle 3D, serveur DELLODM :
+     887 s le 31/10, traitement n° 8, sans tuiles d'ODM à l'époque). Photos : disque BASE D (3d maison/100MEDIA) ou
+     DELLODM BD Photos « BASE D/BASE D/3d maison/100MEDIA » via « Autres machines » (essai des deux nouveautés).
+   - À vérifier : 1) l'option part bien (journal ODM « 3d_tiles ») ; 2) 3d_tiles/model/ dans all.zip et rapatrié
+     (taille, tileset.json) ; 3) QGIS 3.40 : tuiles d'ODM (ORTHOSTUDIO_OBJ2TILES vers un chemin absent pour forcer)
+     contre tuiles locales Obj2Tiles : calage en altitude sur le MNS, fluidité, poids ; 4) décider : garder Obj2Tiles
+     en priorité ou préférer les tuiles d'ODM (gain de temps à l'export), et rapatrier ou non 3d_tiles/pointcloud/.
+   - Rien lancé : demander mon accord avant le traitement NodeODM (≈ 15 min, carte GPU partagée : un seul gros
+     traitement à la fois sur DELLODM).
 7. Plus tard : moteur GPU (MNS / nuage dense, multi-blocs), doublon vision/jaunisse.py ; détection : couche
    d'emprise des levers du Lac dans QGIS ; LiDAR HD : DOM (UTM) non gérés, recalage du drone sur l'IGN (pas
    seulement l'affichage) ; mosaïque multispectrale : orthophoto pleine résolution (aujourd'hui RVB seulement).
@@ -67,6 +81,8 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
    DELLODM.
 9. Réseau : Wi‑Fi par défaut ; câble Ethernet d'AEX branché seulement pour les très gros transferts.
 
+RANGEMENT D'AEX proposé le 08/11 (rien déplacé, attendre mon choix) : liste dans
+~/OrthoStudio_notes/nettoyage_2026-11-08.txt (section « Rangement proposé »).
 PROCHAINE ÉTAPE : point 6 (tuiles 3D d'ODM) après mon feu vert ; mes essais (point 3 fait le 08/11 après redémarrage,
 photos de DELLODM) cette semaine. Nettoyage du 08/11 : ~/OrthoStudio_notes/nettoyage_2026-11-08.txt ; zip
 ~/Desktop/OrthoStudio_installation_2026-11-08_7b46b81.zip. Chrome ne chargeait plus rien le 08/11 : réglé par un
