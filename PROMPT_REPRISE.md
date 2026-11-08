@@ -15,8 +15,8 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
   accord explicite (fusions comprises).
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + 6 commits du 08/11 non
-  fusionnés, dernier 448e426), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (main + 7 commits du 08/11 non
+  fusionnés, dernier dc61f94), instance 8001 (lancement : voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets
   ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ; journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV).
 
@@ -40,7 +40,9 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   biomasse / points terrain (bd1083f), Q.3 vigne, verger, dégâts (80600b7, f019574 : noms de groupes lisibles, boîte
   d'export à jour), Q.4 jaunisses et frelons avec photos des suspects copiées et ouvertes dans QGIS (54bbda7),
   Q.5 thermique, anomalies PV par forme, calepinage (tables, modules, anomalies rattachées ; alerte si plan modifié
-  après le rattachement) (448e426, essai sur fd 50m de démonstration ; suite DELLODM 641 verts).
+  après le rattachement) (448e426, essai sur fd 50m de démonstration ; suite DELLODM 641 verts), Q.6 photos
+  géoréférencées (empreintes, centres + photo de drone et vignette ; option « Copier les photos de drone ») et aperçu
+  GeoTIFF de la mosaïque rapide (dc61f94 ; test2 : 196 photos, 830 Mo ; suite DELLODM 646 verts). Export terminé.
   Mes décisions : résultats en coordonnées (jamais les algorithmes), tout ce qui est détecté (auto et main),
   jaunisses / frelons = orthophotos + points GPS + photos, thermique = ortho + défauts + calepinage, plans de vol non ;
   objectif : le client voit son projet chez lui avec QGIS (gratuit).
@@ -54,9 +56,7 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   complète sur DELLODM pas relancée depuis Q.2.
 
 TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour chaque point) :
-4. Export QGIS de tous les modules, suite : Q.6 photos
-   géoréférencées (empreintes, centres ; et la mosaïque rapide, VRT exclu : orthophoto des projets de photos
-   brutes ?), tests, LISEZMOI, vérification QGIS 3.40 ; puis suite complète DELLODM.
+4. Export QGIS de tous les modules : terminé (Q.1 à Q.6).
    Ensuite : fusion de la branche dans main (mon accord), DELLODM (push + installateur), production.
 3. Production (8000) : à relancer par moi (./run.sh dans /home/aex/TEST ), jeton dans Réglages → « Service de
    calcul des onglets » ; réexporter vers QGIS les projets dont l'export date d'avant la fusion.
@@ -70,7 +70,7 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
 Données de test sur DELLODM : ~/BD Photos (copie partielle de BASE D par moi, 08/11 ; à utiliser pour gagner du
 temps).
 
-PROCHAINE ÉTAPE : Q.6 (photos géoréférencées) après mon feu vert.
+PROCHAINE ÉTAPE : fusion de la branche dans main (mon accord), puis DELLODM (push + installateur) et production.
 
 Règles :
 - Arrêt et rapport court à la fin de chaque point, puis attendre mon feu vert.
