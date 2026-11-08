@@ -81,7 +81,7 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
    DELLODM.
 9. Réseau : Wi‑Fi par défaut ; câble Ethernet d'AEX branché seulement pour les très gros transferts.
 
-RANGEMENT D'AEX fait le 08/11 (~/Scripts, ~/Notes, ~/Documents) et WebODM retiré ; volumes WebODM (12 Go) à décider :
+RANGEMENT D'AEX fait le 08/11 (~/Scripts, ~/Notes, ~/Documents) et WebODM retiré entièrement (projets à refaire dans OrthoStudio) :
 ~/OrthoStudio_notes/nettoyage_2026-11-08.txt.
 PROCHAINE ÉTAPE : point 6 (tuiles 3D d'ODM) après mon feu vert ; mes essais (point 3 fait le 08/11 après redémarrage,
 photos de DELLODM) cette semaine. Nettoyage du 08/11 : ~/OrthoStudio_notes/nettoyage_2026-11-08.txt ; zip
