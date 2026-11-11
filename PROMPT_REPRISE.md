@@ -103,7 +103,6 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
 RANGEMENT D'AEX fait le 08/11 (~/Scripts, ~/Notes, ~/Documents) et WebODM retiré entièrement (projets à refaire dans OrthoStudio) :
 ~/OrthoStudio_notes/nettoyage_2026-11-08.txt.
 PROCHAINE ÉTAPE : essais de l'utilisateur sur 8001 (branche 0a771e8), puis fusion dans main avec son accord, réinstallation DELLODM et 8000 (lui) ; décision sur l'option 3d-tiles ; moteur GPU plus tard.
-redémarrage du PC.
 Répondre TOUJOURS en français, même après un long travail (rappel du 08/11).
 
 Règles :
