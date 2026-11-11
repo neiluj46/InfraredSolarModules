@@ -14,13 +14,14 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
-  accord explicite (fusions comprises). main = 7b46b81 (08/11 soir), identique à la branche d'essai.
-- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= main = 7b46b81), instance 8001 (lancement :
+  accord explicite (fusions comprises). main = 7b46b81 (08/11 soir) ; la branche d'essai a 10 commits d'avance (audit du 11/11).
+- OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= 2d82491, poussée), instance 8001 (lancement :
   voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ;
   journal ~/OrthoStudio_essais/8001.log).
 - InfraredSolarModules : ~/InfraredSolarModules, branche ccr-f0a48b31-r292tn (thermique PV, ce prompt).
 
-Lis d'abord : ~/OrthoStudio_test/CLAUDE.md (encadré « Priorités et attentes » en tête), docs/photos_dellodm.md,
+Lis d'abord : ~/OrthoStudio_test/CLAUDE.md (encadré « Priorités et attentes » en tête), docs/audit_2026-11-11.md (audit et
+corrections du 11/11, À LIRE EN PREMIER), docs/photos_dellodm.md,
 docs/lidar_hd_ign.md et docs/export_qgis_modules.md (derniers travaux), puis git log -8. Ne refais pas ce qui est fait.
 
 Au démarrage, vérifier (et me le dire en une ligne) :
@@ -28,6 +29,23 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   CLAUDE.md, setsid nohup, journal ~/OrthoStudio_essais/8001.log) ; 8000 (production) : me demander avant.
 - DELLODM : ssh-add -l ; curl http://127.0.0.1:8001/api/calcul/test et /api/calcul/gpu/test → code_identique.
 - réseau : ip route get 192.168.1.125 (wlp2s0 = Wi‑Fi, état normal ; enp3s0f1 = câble, gros transferts seulement).
+
+AUDIT DU 11/11/2026 (demande « regarde tout le projet… erreurs, justesse, efficacité » puis « corrige moi tout ça ») :
+- 8 audits par agents (détection orthophoto, photos brutes / géoréférencement, volumes / Lac, azote / biomasse,
+  thermique / calepinage / vols, cœur / NodeODM, export QGIS / rapports, interface JS), puis corrections par lots,
+  chaque lot relu par un agent avant commit : A 2c57d2a (chiffres faux), D ab19423 (pertes de données, NodeODM,
+  export, sécurité), 13c8a76 (imports Web Mercator), E b86e6b4 (interface), B 11f1d78 (calepinage, vols),
+  C dfda669 (jaunisses, Vision, mosaïque), G 0ae162f (détection orthophoto), H bb08206 (volumes, Lac, retenue),
+  a2cfee2 (WeasyPrint rendait PIL tolérant aux photos tronquées), 2d82491 (zonage azote 85× plus rapide).
+- Suite AEX : 850 réussis, 0 échec (a2cfee2) ; agro 119 verts après 2d82491. 8001 relancée avec ce code.
+  Parcours de l'interface sur 8001 (12 projets × 15 onglets) : aucune erreur JS.
+- NON FUSIONNÉ dans main : l'utilisateur a dit « ça me semble bon, on fusionnera plus tard » (11/11).
+- DELLODM : services à réinstaller (sudo, SANS --token, par l'utilisateur) après la fusion ; tant que ce n'est pas
+  fait, un calcul « sur DELLODM » refuse (empreinte du code différente) → choisir « Ce PC » (vu le 11/11, normal).
+- Changements de comportement et choix laissés à l'utilisateur : voir docs/audit_2026-11-11.md (taux de dégâts sur
+  parcelle − exclusions, jaunisses sur le plan du feuillage 1,5 m, rangées du calepinage par voisinage, garde
+  Host/Origin du serveur local + ORTHOSTUDIO_HOTES ; choix ouverts : facteur d'échelle Lambert-93 du Lac,
+  tache_max_m2 des jaunisses, décodage MPO, seuils des jaunisses en cm).
 
 État au 08/11/2026 soir (tout commité, poussé et fusionné dans main ; sauvegarde sur DELLODM) :
 - Fait et fusionné : détection automatique des volumes (D.1 à D.7), vue 3D de l'export QGIS, export QGIS de tous
@@ -55,6 +73,8 @@ Au démarrage, vérifier (et me le dire en une ligne) :
   prompt, mémoire de Claude).
 
 TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour chaque point) :
+0. Audit du 11/11 : essais de l'utilisateur sur 8001, puis fusion dans main (avance rapide, avec son accord),
+   réinstallation des services DELLODM (lui), production 8000 (lui) ; suite DELLODM à rejouer après la fusion.
 3. Moi : installateur DELLODM (sudo, SANS --token) ; production 8000 (./run.sh dans /home/aex/TEST , jeton dans
    Réglages → « Service de calcul des onglets ») ; réexporter vers QGIS les projets exportés avant le 08/11.
    Essayer dans 8001 : vue 3D + LiDAR HD, surcouche LiDAR de la carte, case « orthophoto pleine résolution ».
@@ -83,7 +103,7 @@ TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour c
 
 RANGEMENT D'AEX fait le 08/11 (~/Scripts, ~/Notes, ~/Documents) et WebODM retiré entièrement (projets à refaire dans OrthoStudio) :
 ~/OrthoStudio_notes/nettoyage_2026-11-08.txt.
-PROCHAINE ÉTAPE : point 6 (tuiles 3D d'ODM) après mon feu vert ; mes essais (point 3 fait le 08/11 après redémarrage,
+PROCHAINE ÉTAPE : point 0 (fusion de l'audit du 11/11) quand l'utilisateur le dira, puis point 6 (tuiles 3D d'ODM) après mon feu vert ; mes essais (point 3 fait le 08/11 après redémarrage,
 photos de DELLODM) cette semaine. Nettoyage du 08/11 : ~/OrthoStudio_notes/nettoyage_2026-11-08.txt ; zip
 ~/Desktop/OrthoStudio_installation_2026-11-08_7b46b81.zip. Chrome ne chargeait plus rien le 08/11 : réglé par un
 redémarrage du PC.
