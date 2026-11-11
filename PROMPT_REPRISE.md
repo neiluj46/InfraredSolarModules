@@ -14,7 +14,7 @@ commits. Je pilote souvent depuis mon téléphone : rapports courts, lisibles su
 
 Dépôts et copies :
 - OrthoStudio production : /home/aex/TEST  (espace final), branche main, port 8000. JAMAIS y toucher sans mon
-  accord explicite (fusions comprises). main = 7b46b81 (08/11 soir) ; la branche d'essai a 10 commits d'avance (audit du 11/11).
+  accord explicite (fusions comprises). main = 2d82491 (audit du 11/11 fusionné le 11/11) ; la branche d'essai a 0a771e8 en plus (point 7 du 11/11, non fusionné).
 - OrthoStudio essai : worktree ~/OrthoStudio_test, branche ccr-0037e643-x5jvxm (= 2d82491, poussée), instance 8001 (lancement :
   voir CLAUDE.md ; ORTHOSTUDIO_PROJECTS=~/OrthoStudio_essais/projets ORTHOSTUDIO_DB=~/OrthoStudio_essais/essais.db ;
   journal ~/OrthoStudio_essais/8001.log).
@@ -73,39 +73,36 @@ AUDIT DU 11/11/2026 (demande « regarde tout le projet… erreurs, justesse, eff
   prompt, mémoire de Claude).
 
 TOUT CE QUI RESTE À FAIRE (dans l'ordre proposé ; attendre mon feu vert pour chaque point) :
-0. Audit du 11/11 : essais de l'utilisateur sur 8001, puis fusion dans main (avance rapide, avec son accord),
-   réinstallation des services DELLODM (lui), production 8000 (lui) ; suite DELLODM à rejouer après la fusion.
+0. FAIT le 11/11 (demande « fais tous les points listés ») : audit fusionné dans main (avance rapide 7b46b81 →
+   2d82491, poussé sur GitHub et sur DELLODM ~odm/OrthoStudio). Suite DELLODM : 784 verts + 13 échecs connus rejoués
+   verts sur AEX (52/52). RESTE (lui) : réinstaller les services DELLODM (sudo, SANS --token ; d'ici là
+   code_identique = false → « Ce PC »), production 8000.
 3. Moi : installateur DELLODM (sudo, SANS --token) ; production 8000 (./run.sh dans /home/aex/TEST , jeton dans
    Réglages → « Service de calcul des onglets ») ; réexporter vers QGIS les projets exportés avant le 08/11.
-   Essayer dans 8001 : vue 3D + LiDAR HD, surcouche LiDAR de la carte, case « orthophoto pleine résolution ».
-6. Tuiles 3D d'ODM (case « Modèle 3D », option 3d-tiles) : jamais vues sur un vrai traitement (traitement NodeODM :
-   mon accord). PRÉPARÉ le 08/11 :
-   - Code déjà en place : odm_core/options.py ajoute 3d-tiles quand dsm (case « Modèle 3D ») ; nodeodm.py
-     TUILES_MEMBER = "3d_tiles/model/" (option facultative : un ODM trop ancien l'ignore) ; pipeline.py rapatrie vers
-     ortho/modele_3d_tuiles/ ; export_qgis.py ajouter_maillage() ne reprend les tuiles d'ODM QUE si Obj2Tiles manque
-     (Obj2Tiles est installé sur AEX : ~/.local/bin/Obj2Tiles, tuiles légères -t, cf. docs/vue_3d_qgis.md).
-   - DELLODM : NodeODM / ODM 3.6.2, l'option --3d-tiles existe (opendm/config.py).
-   - Jeu d'essai proposé : projet 6 « Plan 3d Maison » de 8001 (124 photos DJI, ultra + Modèle 3D, serveur DELLODM :
-     887 s le 31/10, traitement n° 8, sans tuiles d'ODM à l'époque). Photos : disque BASE D (3d maison/100MEDIA) ou
-     DELLODM BD Photos « BASE D/BASE D/3d maison/100MEDIA » via « Autres machines » (essai des deux nouveautés).
-   - À vérifier : 1) l'option part bien (journal ODM « 3d_tiles ») ; 2) 3d_tiles/model/ dans all.zip et rapatrié
-     (taille, tileset.json) ; 3) QGIS 3.40 : tuiles d'ODM (ORTHOSTUDIO_OBJ2TILES vers un chemin absent pour forcer)
-     contre tuiles locales Obj2Tiles : calage en altitude sur le MNS, fluidité, poids ; 4) décider : garder Obj2Tiles
-     en priorité ou préférer les tuiles d'ODM (gain de temps à l'export), et rapatrier ou non 3d_tiles/pointcloud/.
-   - Rien lancé : demander mon accord avant le traitement NodeODM (≈ 15 min, carte GPU partagée : un seul gros
-     traitement à la fois sur DELLODM).
-7. Plus tard : moteur GPU (MNS / nuage dense, multi-blocs), doublon vision/jaunisse.py ; détection : couche
-   d'emprise des levers du Lac dans QGIS ; LiDAR HD : DOM (UTM) non gérés, recalage du drone sur l'IGN (pas
-   seulement l'affichage) ; mosaïque multispectrale : orthophoto pleine résolution (aujourd'hui RVB seulement).
+   Essayer dans 8001 : vue 3D + LiDAR HD (et la nouvelle case « Altitudes recalées sur l'IGN »), surcouche LiDAR
+   de la carte, case « orthophoto pleine résolution ».
+6. FAIT le 11/11 : traitement 8 du projet 6 (photos de DELLODM par SSHFS, ultra + Modèle 3D, DELLODM, 973 s) ;
+   option partie (journal « 3d_tiles: True »), 3d_tiles/model/ rapatrié (40 Mo, une tuile par niveau), mais tuiles
+   d'ODM MAL PLACÉES (enveloppe à 0 m d'altitude, 90 m au sud ; Obj2Tiles local : 89,9 m au-dessus du site, juste)
+   → Obj2Tiles reste prioritaire, alerte si repli. Détail : docs/vue_3d_qgis.md. Anciens produits :
+   ortho_avant_3dtiles_2026-11-11/. DÉCISION À PRENDRE (lui) : retirer l'option 3d-tiles du traitement ou la garder.
+   Pas encore ouvert dans QGIS à l'œil.
+7. FAIT le 11/11 par 4 agents (worktrees), relus par 2 agents, branche d'essai 0a771e8 (NON fusionnée) :
+   doublon vision/jaunisse.py (délègue au critère de l'onglet, réglage jaunisse.critere) ; couche « Emprise du
+   lever » du Lac dans QGIS ; LiDAR HD des DROM (Guadeloupe EPSG:5490, Réunion 2975, Mayotte 4471 ; altitudes du
+   WFS) ; recalage vertical du drone sur l'IGN (option par projet, désactivée par défaut, fichiers jamais réécrits,
+   coupé si le modèle du drone change) ; orthophoto pleine résolution des mosaïques multispectrales (COG DEFLATE
+   16 bits). Suite DELLODM : 792 verts + 13 connus. RESTE : moteur GPU (MNS / nuage dense, multi-blocs).
+   Questions ouvertes : seuil 0,5 m du recalage ; recalage par plan (MNS basculé) ; recaler aussi le multispectral ;
+   La Désirade (WFS GUAD2008LD contre descriptif IGN 1992 LD). Choix de l'audit toujours ouverts (Lac Lambert-93,
+   tache_max_m2, MPO, seuils en cm).
 8. En attente du drone thermique ou d'une base de R-JPEG : vrai vol thermique (recalage du calepinage), SDK DJI sur
    DELLODM.
 9. Réseau : Wi‑Fi par défaut ; câble Ethernet d'AEX branché seulement pour les très gros transferts.
 
 RANGEMENT D'AEX fait le 08/11 (~/Scripts, ~/Notes, ~/Documents) et WebODM retiré entièrement (projets à refaire dans OrthoStudio) :
 ~/OrthoStudio_notes/nettoyage_2026-11-08.txt.
-PROCHAINE ÉTAPE : point 0 (fusion de l'audit du 11/11) quand l'utilisateur le dira, puis point 6 (tuiles 3D d'ODM) après mon feu vert ; mes essais (point 3 fait le 08/11 après redémarrage,
-photos de DELLODM) cette semaine. Nettoyage du 08/11 : ~/OrthoStudio_notes/nettoyage_2026-11-08.txt ; zip
-~/Desktop/OrthoStudio_installation_2026-11-08_7b46b81.zip. Chrome ne chargeait plus rien le 08/11 : réglé par un
+PROCHAINE ÉTAPE : essais de l'utilisateur sur 8001 (branche 0a771e8), puis fusion dans main avec son accord, réinstallation DELLODM et 8000 (lui) ; décision sur l'option 3d-tiles ; moteur GPU plus tard.
 redémarrage du PC.
 Répondre TOUJOURS en français, même après un long travail (rappel du 08/11).
 
